@@ -3,6 +3,7 @@
 #include <map>
 #include <mutex>
 #include <memory>
+#include <iostream>
 #include <typeinfo>
 #include <emergent/Emergent.h>
 
@@ -17,13 +18,13 @@ namespace emergent
 	class TypeBase
 	{
 		protected:
-			
+
 			static std::map<std::string, std::shared_ptr<TypeBase>> masters;
 			static std::mutex cs;
 	};
 
 
-	/// Helper for handling types dynamically, useful when loading classes 
+	/// Helper for handling types dynamically, useful when loading classes
 	/// from a library and you wish to instantiate them by string name.
 	template <class T> class Type : public TypeBase
 	{
@@ -33,17 +34,17 @@ namespace emergent
 			{
 				Master()->types[hyphenate(name)] = this;
 			}
-			
+
 
 			/// Create an instance of the class from the given name
 			/// Returns an empty unique_ptr if the class name cannot be found
 			static std::unique_ptr<T> Create(std::string name)
 			{
-				return Master()->types.count(name) 
-					? std::unique_ptr<T>(Master()->types[name]->constructor()) 
+				return Master()->types.count(name)
+					? std::unique_ptr<T>(Master()->types[name]->constructor())
 					: std::unique_ptr<T>();
 			}
-			
+
 
 			/// Create instances of all registered classes
 			static std::map<std::string, std::unique_ptr<T>> CreateAll()
@@ -58,9 +59,21 @@ namespace emergent
 				return result;
 			}
 
-		
+
+			// Print all registered types derived from T
+			static void Print(bool multiline = true)
+			{
+				if (!multiline)
+				{
+					for (auto t : Master()->types) std::cout << t.first << " ";
+					std::cout << std::endl;
+				}
+				else for (auto t : Master()->types) std::cout << "    " << t.first << std::endl;
+			}
+
+
 		private:
-			
+
 			/// Only the master instance is allow to be constructed this way
 			Type() {}
 
@@ -68,11 +81,11 @@ namespace emergent
 			static std::shared_ptr<Type<T>> Master()
 			{
 				std::lock_guard<std::mutex> lock(cs);
-				
+
 				std::string base = typeid(Type<T>).name();
-				
+
 				if (!masters.count(base)) masters[base] = std::shared_ptr<TypeBase>(new Type<T>());
-				
+
 				return std::static_pointer_cast<Type<T>>(masters[base]);
 			}
 
@@ -81,5 +94,5 @@ namespace emergent
 
 			/// The list of registered types (only accessed in the master)
 			std::map<std::string, Type<T>*> types;
-	};	
+	};
 }
