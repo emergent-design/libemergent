@@ -22,23 +22,23 @@ namespace emergent
 		public:
 			/// Destructor
 			virtual ~ImageBase() { }
-			
+
 			/// Operator override to support implicit and explicit typecasting
 			operator T*() { return this->buffer; }
-			
+
 			/// Return the buffer data
 			T *Data() { return this->buffer; }
-			
+
 			/// Return the actual buffer.
 			/// WARNING: If you modify the size of this buffer you will corrupt the owner image
 			Buffer<T> *Internal() { return &this->buffer; }
-			
+
 			/// Return the image type ID
 			int Type() { return this->type; }
-			
+
 			/// Return the image depth (in bytes)
 			int Depth() { return this->depth; }
-			
+
 			/// Return the image width
 			int Width() { return this->width; }
 
@@ -47,14 +47,12 @@ namespace emergent
 
 			/// Return the image size
 			int Size() { return this->width * this->height; }
-			
+
 			/// Clear the image - sets all pixel values to 0 regardless of type
 			void Clear() { this->buffer.Clear(); }
-			
-			
+
+
 			/// Resizes the image buffers but destroys any existing image data.
-			/// Use the Scale function in the Tranforms class if you wish to scale
-			/// the image data itself.
 			void Resize(int width, int height)
 			{
 				if (width > 0 && height > 0)
@@ -65,34 +63,34 @@ namespace emergent
 				}
 				this->lookup.Resize(0);
 			}
-			
-			
+
+
 			/// Returns the maximum value in the current image data (regardless of image depth).
 			T Max()
 			{
 				T result 	= std::numeric_limits<T>::min();
 				T *src		= this->buffer;
 				int size	= this->buffer.Size();
-				
+
 				for (int i=0; i<size; i++, src++) if (*src > result) result = *src;
-				
+
 				return result;
 			}
-			
-			
+
+
 			/// Returns the minimum value in the current image data (regardless of image depth).
 			T Min()
 			{
 				T result 	= std::numeric_limits<T>::max();
 				T *src		= this->buffer;
 				int size	= this->buffer.Size();
-				
+
 				for (int i=0; i<size; i++, src++) if (*src < result) result = *src;
-				
+
 				return result;
 			}
-			
-			
+
+
 			/// Truncate the height of the image down to the given height. Since this just requires
 			/// a change of the height value and a cut of the buffer it allows you to chop the
 			/// bottom off of an image without needing to use an additional image buffer.
@@ -106,11 +104,11 @@ namespace emergent
 						return true;
 					}
 				}
-				
+
 				return false;
 			}
-			
-			
+
+
 			/// Count the number of values in the current image data (regardless of image depth)
 			/// that match the supplied predicate.
 			int Count(std::function<bool(T value)> predicate)
@@ -118,47 +116,47 @@ namespace emergent
 				int result	= 0;
 				int size	= this->buffer.Size();
 				T *src		= this->buffer;
-				
+
 				for (int i=0; i<size; i++) if (predicate(*src++)) result++;
-				
+
 				return result;
 			}
-			
-			
+
+
 			/// Count the number of zero values in the current image data (regardless of image depth)
 			int ZeroCount()
 			{
 				int result	= 0;
 				int size	= this->buffer.Size();
 				T *src		= this->buffer;
-				
+
 				for (int i=0; i<size; i++) if (!*src++) result++;
-				
+
 				return result;
 			}
-			
-			
+
+
 			/// Clamp the current image data (regardless of image depth) to the supplied
 			/// lower (black) and upper (white) limits.
 			void Clamp(T black, T white)
 			{
 				T *src 		= this->buffer;
 				int size	= this->width * this->height * this->depth;
-				
+
 				for(int i = 0; i< size; i++, src++)
 				{
 					*src = *src < black ? black : (*src > white ? white : *src);
 				}
 			}
 
-			
+
 			/// Load an image from file. Uses the freeimage library to attempt loading
 			/// and conversion of the image. It should cope with any standard image
-			/// formats. Image format is automatically determined by file extension.
+			/// formats.
 			bool Load(std::string path)
 			{
 				fipImage image;
-				
+
 				return image.load(path.c_str()) ? this->FromFip(image) : false;
 			}
 
@@ -168,7 +166,7 @@ namespace emergent
 			{
 				fipImage image;
 				fipMemoryIO mem(buffer.Data(), buffer.Size());
-				
+
 				return image.loadFromMemory(mem) ? this->FromFip(image) : false;
 			}
 
@@ -191,11 +189,11 @@ namespace emergent
 						default:	return image.save(path.c_str(), JPEG_QUALITYNORMAL);
 					}
 				}
-				
+
 				return false;
 			}
-			
-			
+
+
 			/// Save image to a memory buffer.
 			bool Save(Buffer<byte> &buffer, int compression)
 			{
@@ -236,8 +234,8 @@ namespace emergent
 			{
 				return distribution(this->buffer);
 			}
-			
-			
+
+
 			/// Threshold this image at the given value (each channel is thresholded independently)
 			void Threshold(T value, bool above = true)
 			{
@@ -249,7 +247,7 @@ namespace emergent
 			}
 
 
-			/// Shift all of the values in the image data (regardless of image depth) by the 
+			/// Shift all of the values in the image data (regardless of image depth) by the
 			/// specified amount.
 			void Shift(int value)
 			{
@@ -259,8 +257,8 @@ namespace emergent
 				for (int i=0; i<size; i++, src++) *src = clamp<T>(*src + value);
 			}
 
-			
-			/// Gets the value of a pixel for a specific channel but supports values outside the image dimensions, 
+
+			/// Gets the value of a pixel for a specific channel but supports values outside the image dimensions,
 			/// if mirror is true the pixel values are mirrored, otherwise they are smeared. Weird things will happen
 			/// if a value that is twice the width/height outside the image is requested.
 			T Value(int x, int y, byte channel = 0, bool mirror = true)
@@ -270,13 +268,13 @@ namespace emergent
 					int ax 		= x < 0 ? (mirror ? -x : 0) : x < this->width  ? x : (mirror ? this->width + this->width - x - 2 : this->width - 1);
 					int ay 		= y < 0 ? (mirror ? -y : 0) : y < this->height ? y : (mirror ? this->height + this->height - y - 2 : this->height - 1);
 					int line	= this->width * this->depth;
-					
+
 					return *(this->buffer + ay * line + ax * this->depth + channel);
 				}
-				
+
 				return 0;
 			}
-			
+
 
 			/// Interpolate the pixel value of a specific channel at the given coordinates.
 			T Interpolate(double x, double y, byte channel = 0)
@@ -298,7 +296,7 @@ namespace emergent
 
 				return 0;
 			}
-			
+
 
 			/// Variance normalise the image to a target variance.
 			/// Each channel is normalised independently.
@@ -340,11 +338,11 @@ namespace emergent
 
 					return true;
 				}
-				
+
 				return false;
 			}
-			
-			
+
+
 			/// Normalise the image data. Each channel is normalised
 			/// independently.
 			bool Normalise()
@@ -388,8 +386,8 @@ namespace emergent
 
 				return false;
 			}
-			
-			
+
+
 			/// Generate a row lookup table
 			T **Lookup()
 			{
@@ -399,25 +397,25 @@ namespace emergent
 					int line	= this->width * this->depth;
 					T *pb		= this->buffer;
 					T **pl		= this->lookup;
-					
-					for (int y=0; y<this->height; y++, pb+=line, pl++) *pl = pb; 
+
+					for (int y=0; y<this->height; y++, pb+=line, pl++) *pl = pb;
 				}
-				
+
 				return this->lookup;
 			}
-			
-			
+
+
 		protected:
 			ImageBase(int type, int depth, int width = 0, int height = 0)
-				: type(type), depth(depth), width(width), height(height), buffer(width * height * depth), lookup() 
+				: type(type), depth(depth), width(width), height(height), buffer(width * height * depth), lookup()
 			{
 				switch (depth)
 				{
 					case 1: this->toFipPel 		= [](T *src, byte *dst) { *dst = (byte)*src; };
 							this->fromFipPel	= [](byte *src, T *dst) { *dst = *src; };
 							break;
-							
-					#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR	
+
+					#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
 						case 3: this->toFipPel 		= [](T *src, byte *dst) { dst[0] = (byte)src[2]; dst[1] = (byte)src[1]; dst[2] = (byte)src[0]; };
 								this->fromFipPel	= [](byte *src, T *dst) { dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; };
 					#else
@@ -425,7 +423,7 @@ namespace emergent
 								this->fromFipPel	= [](byte *src, T *dst) { *dst++ = *src++; *dst++ = *src++; *dst++ = *src++; };
 					#endif
 								break;
-								
+
 					#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
 						case 4: this->toFipPel 		= [](T *src, byte *dst) { dst[0] = (byte)src[2]; dst[1] = (byte)src[1]; dst[2] = (byte)src[0]; dst[3] = (byte)src[3]; };
 								this->fromFipPel	= [](byte *src, T *dst) { dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; dst[3] = src[3]; };
@@ -436,13 +434,13 @@ namespace emergent
 								break;
 				}
 			}
-			
+
 			/// Image type
 			int type;
-			
+
 			/// Image depth
 			int depth;
-			
+
 			/// Image width
 			int width;
 
@@ -451,15 +449,18 @@ namespace emergent
 
 			/// Buffer for the actual image data
 			Buffer<T> buffer;
-			
+
 			/// Lookup table for rows
 			Buffer<T*> lookup;
-			
+
 	private:
-			
+
+			/// Pixel converters that go between a pixel of the current image type
+			/// and that of a fipImage taking byte order into account.
 			std::function<void(T*, byte*)> toFipPel		= nullptr;
 			std::function<void(byte*, T*)> fromFipPel	= nullptr;
-			
+
+
 			/// Convert this image to a fipImage
 			bool ToFip(fipImage &image)
 			{
@@ -472,7 +473,7 @@ namespace emergent
 				int pad 			= image.getScanWidth() - line;
 				T *src				= this->buffer;
 				byte *dst 			= image.accessPixels();
-				
+
 
 				for (y=0; y<height; y++, dst += pad)
 				{
@@ -484,11 +485,11 @@ namespace emergent
 
 
 				image.flipVertical();
-				
+
 				return true;
 			}
-			
-			
+
+
 			/// Read a fipImage into this
 			bool FromFip(fipImage &image)
 			{
@@ -511,7 +512,7 @@ namespace emergent
 
 				byte *src 	= image.accessPixels();
 				T *dst		= this->buffer;
-				
+
 				for (y=0; y<height; y++, src += pad)
 				{
 					for (x=0; x<width; x++, src += this->depth, dst += this->depth)
@@ -519,7 +520,7 @@ namespace emergent
 						this->fromFipPel(src, dst);
 					}
 				}
-				
+
 				return true;
 			}
 	};
@@ -535,7 +536,7 @@ namespace emergent
 		public:
 			/// Default constructor
 			Image() : ImageBase<T>(D::type, D::size) {}
-			
+
 
 			/// Constructor that allocates an image buffer of the required size
 			Image(int width, int height) : ImageBase<T>(D::type, D::size, width, height) {}
@@ -651,7 +652,7 @@ namespace emergent
 							{
 								for (k=0; k<D::size; k++) *ps++ = *pi++;
 							}
-						}					
+						}
 
 					}
 					else
@@ -662,14 +663,14 @@ namespace emergent
 							{
 								for (k=0; k<D::size; k++) *ps++ += *pi++;
 							}
-						}					
+						}
 					}
 				}
 
 				return *this;
 			}
 
-			
+
 			/// Interpolate the pixel value of all channels at the
 			/// given coordinates.
 			typename D::template Colour<T> InterpolateAll(double x, double y)

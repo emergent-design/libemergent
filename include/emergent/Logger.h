@@ -8,7 +8,7 @@
 //#include <hiredis/hiredis.h>
 #include <emergent/tinyformat.h>
 
-#ifdef __linux__
+#ifdef __linux
 #include <syslog.h>
 #endif
 
@@ -106,14 +106,14 @@ namespace emergent
 			public:
 				redis(string channel, string server = "127.0.0.1", int port = 6379);
 				~redis();
-				
+
 			protected:
 				virtual void write(severity severity, string message);
-				
+
 			private:
 				redis(const redis &r) = delete;				// Disable copy construction and assignment
 				redis &operator=(const redis &r) = delete;	// operator due to it owning a redisContext.
-				
+
 				string channel;
 				redisContext *context;
 		};*/

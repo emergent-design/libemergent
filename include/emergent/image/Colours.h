@@ -1,5 +1,6 @@
 #pragma once
 
+#include <emergent/Emergent.h>
 #include <emergent/image/Depth.h>
 
 
@@ -27,6 +28,11 @@ namespace emergent
 		static Colour Magenta(255, 0, 255);
 		static Colour Cyan(0, 255, 255);
 
-		static std::vector<Colour> Palette{ Colours::White, Colours::Grey, Colours::Red, Colours::Green, Colours::Blue, Colours::DarkRed, Colours::DarkGreen, Colours::DarkBlue, Colours::Cyan, Colours::Magenta, Colours::Yellow };
+		static std::vector<Colour> Palette {
+			Colours::White,		Colours::Grey,		Colours::Red,
+			Colours::Green,		Colours::Blue,		Colours::DarkRed,
+			Colours::DarkGreen, Colours::DarkBlue,	Colours::Cyan,
+			Colours::Magenta,	Colours::Yellow
+		};
 	};
 }

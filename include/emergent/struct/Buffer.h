@@ -13,7 +13,7 @@ namespace emergent
 	template <class T> class Buffer
 	{
 		public:
-		
+
 			/// Default constructor
 			Buffer() {}
 
@@ -23,20 +23,20 @@ namespace emergent
 			{
 				this->Resize(size);
 			}
-			
-			
+
+
 			/// Construct from a binary string
 			Buffer(std::string data)
 			{
 				if (data.length() % sizeof(T) == 0)
 				{
-					this->Resize(data.length() / sizeof(T));				
+					this->Resize(data.length() / sizeof(T));
 					memcpy(this->data, data.data(), data.length());
 				}
 				else throw "Attempting to construct a buffer from a binary string of invalid size";
 			}
-			
-			
+
+
 			/// Copy existing data
 			Buffer(T *data, int size)
 			{
@@ -52,8 +52,8 @@ namespace emergent
 				this->max	= 0;
 				this->Copy((Buffer<T> *)&buffer);
 			}
-			
-			
+
+
 			/// Construct from an initialiser list
 			Buffer(std::initializer_list<T> data)
 			{
@@ -90,20 +90,20 @@ namespace emergent
 
 				return *this;
 			}
-			
-			
+
+
 			/// Assignment from a binary string
 			Buffer<T>& operator=(const std::string value)
 			{
 				if (value.length() % sizeof(T) == 0)
 				{
-					this->Resize(value.length() / sizeof(T));				
+					this->Resize(value.length() / sizeof(T));
 					memcpy(this->data, value.data(), value.length());
 				}
 				else throw "Attempting to assign a buffer from a binary string of invalid size";
 			}
-			
-			
+
+
 			/// Append the data from the supplied buffer to this buffer
 			void Append(Buffer<T> &buffer)
 			{
@@ -116,22 +116,22 @@ namespace emergent
 					memcpy(this->data, temp, this->size * sizeof(T));
 					delete [] temp;
 				}
-				
+
 				memcpy(this->data + this->size * sizeof(T), buffer.data, buffer.size * sizeof(T));
-				
+
 				this->size = size + buffer.size;
 			}
-			
-			
+
+
 			/// Copy existing data
 			void Set(T *data, int size)
 			{
 				this->Resize(size);
-				
+
 				memcpy(this->data, data, size * sizeof(T));
 			}
-			
-			
+
+
 			/// Sets the data area to 0, so if T is numeric they will be set to 0, if T is a structure
 			/// then the entire structure will be cleared.
 			void Clear()
@@ -170,8 +170,8 @@ namespace emergent
 					delete [] temp;
 				}
 			}
-			
-			
+
+
 			/// Truncate the buffer to the given size. This allows you to crop a buffer
 			/// down without requiring an additional buffer. (See image truncation).
 			bool Truncate(int size)
@@ -181,8 +181,15 @@ namespace emergent
 					this->size = size;
 					return true;
 				}
-				
+
 				return false;
+			}
+
+
+			/// Array style access operator overload
+			T& operator [] (const int index)
+			{
+				return (index >= 0 && index < this->size) ? this->data[index] : this->dummy;
 			}
 
 
@@ -195,15 +202,12 @@ namespace emergent
 			/// Operator overload to support implicit and explicit typecasting
 			operator T*() const { return this->data; }
 
-			/// Array style access operator overload
-			T& operator [] (const int index) { return (index >= 0 && index < this->size) ? this->data[index] : this->dummy; }
-			
 			/// Create a binary string from the raw data
 			operator std::string() {  return std::string((const char *)this->data, this->size * sizeof(T)); }
 
 
 			/// Determine the range of values within the buffer (min/max/range).
-			/// This is only valid for integer types of buffer, if this function
+			/// This is only valid for numeric types of buffer, if this function
 			/// is called on any other type of buffer it will cause a compiler
 			/// error.
 			bounds<T> Range()
@@ -224,74 +228,76 @@ namespace emergent
 
 				return bounds<T>(min, max);
 			}
-			
-			
+
+
 			/// Calculates the sum of values within the buffer. This is
 			/// only valid for numeric types of buffer.
 			double Sum()
 			{
 				double sum = 0;
-				
+
 				if (this->size > 0)
 				{
 					T *src = this->data;
-					
+
 					for (int i=0; i<size; i++) sum += *src++;
 				}
-				
+
 				return sum;
 			}
-			
-			
+
+
 			/// Save the buffer to binary file
 			bool Save(std::string path)
 			{
 				std::ofstream ofs(path, std::ios::out | std::ios::binary);
-				
+
 				if (ofs.good())
 				{
 					ofs.put((char)sizeof(T));
 					ofs.write((char *)this->data, this->size * sizeof(T));
 					ofs.flush();
-					
+
 					return true;
 				}
-				
+
 				return false;
 			}
-			
-			
+
+
 			/// Load the buffer from binary file
 			bool Load(std::string path)
 			{
 				char typeSize;
 				std::ifstream ifs(path, std::ios::in | std::ios::binary);
-				
+
 				if (ifs.good())
 				{
 					ifs.get(typeSize);
-					
+
 					if (typeSize == sizeof(T))
 					{
 						ifs.seekg(0, std::ios::end);
 						int size = (int)ifs.tellg() - 1;
 						ifs.seekg(1);
-						
+
 						if (size % sizeof(T) == 0)
 						{
 							this->Resize(size / sizeof(T));
 
 							ifs.read((char *)this->data, size);
-							
+
 							return true;
 						}
 					}
 				}
-					
+
 				return false;
 			}
 
+
 		private:
+
 			/// Copy the supplied buffer data into this. It will
 			/// only resize the internal buffer where necessary.
 			void Copy(Buffer<T> *buffer)

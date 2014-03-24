@@ -4,6 +4,10 @@
 #include <vector>
 #include <functional>
 
+
+/// When dealing with binary data and images the unsigned char type is
+/// heavily used and byte is much easier to type. It really should be
+/// a default typedef in C++.
 typedef unsigned char byte;
 
 
@@ -21,13 +25,15 @@ namespace emergent
 	/// Change a string to lowercase (transforms the string that is passed in).
 	const std::string lowercase(std::string text);
 
-	/// Generate a hyphenated string from a camel-cased one
+	/// Generate a lowercase hyphenated string from a camel-cased one
 	const std::string hyphenate(std::string text);
 
 	/// Split a string into a list of strings wherever the specified delimiters are found
 	std::vector<std::string> explode(const std::string &text, const std::string &delimiters);
 
+	/// Simple event definition, passes an integer status and expects a bool in return
 	typedef std::function<bool(int)> event;
 }
 
+/// Shortened form of the namespace
 namespace emg = emergent;

@@ -17,28 +17,26 @@ namespace emergent
 		double samples	= 0;	///< Number of samples
 		double sum		= 0;	///< Sum of values
 		double squared	= 0;	///< Sum of squares
-		
-		
+
+
 		/// Default constructor
-		distribution() 
-		{	
-		}
-		
-		
+		distribution() {}
+
+
 		/// Constructor with automatic analysis of supplied buffer
 		template <class T> distribution(Buffer<T> &data)
 		{
 			this->analyse(data);
 		}
-		
-		
-		/// Constructor with automatic analysis of supplied data 
+
+
+		/// Constructor with automatic analysis of supplied data
 		template <class T> distribution(std::vector<T> &data)
 		{
 			this->analyse(data);
 		}
-		
-		
+
+
 		/// Constructor with automatic analysis of supplied data
 		template <class T> distribution(T *data, int size)
 		{
@@ -51,15 +49,15 @@ namespace emergent
 		{
 			return this->analyse(data.Data(), data.Size());
 		}
-		
-		
+
+
 		/// Generate stats from a vector
 		template <class T> bool analyse(std::vector<T> &data)
 		{
 			return this->analyse(&data.front(), data.size());
 		}
-		
-		
+
+
 		/// Generate the distribution stats
 		template <class T> bool analyse(T* data, int size)
 		{
@@ -79,7 +77,7 @@ namespace emergent
 					if (value < min) min = value;
 					if (value > max) max = value;
 				}
-		
+
 				this->sum		= sum;
 				this->squared	= squared;
 				this->samples	= size;
@@ -89,7 +87,7 @@ namespace emergent
 				this->variance	= (squared / size) - (this->mean * this->mean);
 				return true;
 			}
-			
+
 			return false;
 		}
 	};

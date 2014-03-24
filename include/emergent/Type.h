@@ -7,6 +7,10 @@
 #include <typeinfo>
 #include <emergent/Emergent.h>
 
+
+/// The primary method for registering a type, this simply creates an instance
+/// of the Type info class for a specific derived class type. To be used in the
+/// cpp file for that type.
 #define REGISTER_TYPE(base, name) emergent::Type<base> name##_type(#name, [] { return new name; });
 
 
@@ -19,7 +23,11 @@ namespace emergent
 	{
 		protected:
 
+			/// The global list of type masters. There is a sinle master for
+			/// each base class type used to register other types.
 			static std::map<std::string, std::shared_ptr<TypeBase>> masters;
+
+			/// Mutex to help ensure that each type master is only created once.
 			static std::mutex cs;
 	};
 
@@ -30,6 +38,9 @@ namespace emergent
 	{
 		public:
 
+			/// Constructor takes the class name, referred to by the lowercase hyphenated
+			/// name in the lookup table. It also takes a function which instantiates
+			/// the derived type in question.
 			Type(std::string name, std::function<T *()> constructor) : constructor(constructor)
 			{
 				Master()->types[hyphenate(name)] = this;
@@ -60,7 +71,9 @@ namespace emergent
 			}
 
 
-			// Print all registered types derived from T
+			/// Print all registered types derived from T
+			/// If multiline is true, each type name is printed on its own line, otherwise
+			/// they are printed on a single light with space separation.
 			static void Print(bool multiline = true)
 			{
 				if (!multiline)
@@ -77,7 +90,9 @@ namespace emergent
 			/// Only the master instance is allow to be constructed this way
 			Type() {}
 
-			/// Ensures that there is a single master instance
+
+			/// Ensures that there is a single master instance for any given
+			/// base class type.
 			static std::shared_ptr<Type<T>> Master()
 			{
 				std::lock_guard<std::mutex> lock(cs);
@@ -89,8 +104,10 @@ namespace emergent
 				return std::static_pointer_cast<Type<T>>(masters[base]);
 			}
 
+
 			/// A function pointer that can be used to create an instance of the class
 			std::function<T *()> constructor;
+
 
 			/// The list of registered types (only accessed in the master)
 			std::map<std::string, Type<T>*> types;
