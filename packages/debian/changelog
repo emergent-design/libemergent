@@ -1,3 +1,9 @@
+libemergent0 (0.0.2) unstable; urgency=low
+
+  * Sorted out the namespace for the reset event class
+
+ -- Dan <dan@queeg>  Thu, 10 Apr 2014 14:56:58 +0100
+
 libemergent0 (0.0.1) unstable; urgency=low
 
   * Addition of a reset event helper class
