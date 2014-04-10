@@ -4,40 +4,43 @@ using namespace std;
 using namespace chrono;
 
 
-void ResetEvent::Set()
+namespace emergent
 {
-	lock_guard<mutex> lock(this->cs);
-
-	this->flag = true;
-	this->condition.notify_one();
-}
-
-
-void ResetEvent::Reset()
-{
-	lock_guard<mutex> lock(this->cs);
-
-	this->flag = false;
-}
-
-
-bool ResetEvent::Wait(int timeout, bool reset)
-{
-	unique_lock<mutex> lock(this->cs);
-
-	if (!this->flag)
+	void ResetEvent::Set()
 	{
-		if (timeout > 0)
-		{
-			if (this->condition.wait_for(lock, milliseconds(timeout)) == cv_status::timeout)
-			{
-				return false;
-			}
-		}
-		else this->condition.wait(lock);
+		lock_guard<mutex> lock(this->cs);
+
+		this->flag = true;
+		this->condition.notify_one();
 	}
 
-	if (reset) this->flag = false;
 
-	return true;
+	void ResetEvent::Reset()
+	{
+		lock_guard<mutex> lock(this->cs);
+
+		this->flag = false;
+	}
+
+
+	bool ResetEvent::Wait(int timeout, bool reset)
+	{
+		unique_lock<mutex> lock(this->cs);
+
+		if (!this->flag)
+		{
+			if (timeout > 0)
+			{
+				if (this->condition.wait_for(lock, milliseconds(timeout)) == cv_status::timeout)
+				{
+					return false;
+				}
+			}
+			else this->condition.wait(lock);
+		}
+
+		if (reset) this->flag = false;
+
+		return true;
+	}
 }
