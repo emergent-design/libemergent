@@ -1,3 +1,9 @@
+libemergent0 (0.0.3) unstable; urgency=medium
+
+  * The Image class now uses FreeImage instead of FreeImage plus
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 04 Jun 2014 12:44:23 +0100
+
 libemergent0 (0.0.2) unstable; urgency=low
 
   * Sorted out the namespace for the reset event class

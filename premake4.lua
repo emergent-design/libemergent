@@ -12,7 +12,7 @@ solution "emergent"
 	project "libemergent"
 		kind 				"SharedLib"
 		targetname			"emergent"
-		links				{ "freeimageplus" }
+		links				{ "freeimage" }
 		linkoptions			"-Wl,-soname,libemergent.so.0"
 		includedirs			{ "include/emergent" }
 		files 				{ "include/emergent/**.h", "src/emergent/**.cpp" }

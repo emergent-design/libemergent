@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <typeinfo>
 #include <functional>
-#include <FreeImagePlus.h>
+#include <FreeImage.h>
 
 
 namespace emergent
@@ -155,19 +155,51 @@ namespace emergent
 			/// formats.
 			bool Load(std::string path)
 			{
-				fipImage image;
+				bool result = false;
+				auto fif	= FreeImage_GetFileType(path.c_str(), 0);
 
-				return image.load(path.c_str()) ? this->FromFip(image) : false;
+				if (fif == FIF_UNKNOWN) fif = FreeImage_GetFIFFromFilename(path.c_str());
+
+				if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
+				{
+					auto *image = FreeImage_Load(fif, path.c_str());
+
+					if (image)
+					{
+						result = this->FromFib(image);
+						FreeImage_Unload(image);
+					}
+				}
+
+				return result;
 			}
 
 
 			/// Load an image from memory buffer
 			bool Load(Buffer<byte> &buffer)
 			{
-				fipImage image;
-				fipMemoryIO mem(buffer.Data(), buffer.Size());
+				bool result	= false;
+				auto *mem 	= FreeImage_OpenMemory(buffer.Data(), buffer.Size());
 
-				return image.loadFromMemory(mem) ? this->FromFip(image) : false;
+				if (mem)
+				{
+					auto fif = FreeImage_GetFileTypeFromMemory(mem, 0);
+
+					if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
+					{
+						auto *image = FreeImage_LoadFromMemory(fif, mem);
+
+						if (image)
+						{
+							result = this->FromFib(image);
+							FreeImage_Unload(image);
+						}
+					}
+
+					FreeImage_CloseMemory(mem);
+				}
+
+				return result;
 			}
 
 
@@ -176,53 +208,65 @@ namespace emergent
 			/// so be warned). Image format is automatically determined by file extension.
 			bool Save(std::string path, int compression = 0)
 			{
+				bool result = false;
+
 				if (this->Size())
 				{
-					fipImage image;
+					auto *image = this->ToFib();
 
-					this->ToFip(image);
-
-					switch (compression)
+					if (image)
 					{
-						case 0:		return image.save(path.c_str(), PNG_DEFAULT);
-						case 1:		return image.save(path.c_str(), JPEG_QUALITYGOOD);
-						default:	return image.save(path.c_str(), JPEG_QUALITYNORMAL);
+						auto fif = FreeImage_GetFIFFromFilename(path.c_str());
+
+						if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsWriting(fif))
+						{
+							switch (compression)
+							{
+								case 0:		result = FreeImage_Save(fif, image, path.c_str(), PNG_DEFAULT);			break;
+								case 1:		result = FreeImage_Save(fif, image, path.c_str(), JPEG_QUALITYGOOD);	break;
+								default:	result = FreeImage_Save(fif, image, path.c_str(), JPEG_QUALITYNORMAL);	break;
+							}
+						}
+
+						FreeImage_Unload(image);
 					}
 				}
 
-				return false;
+				return result;
 			}
 
 
 			/// Save image to a memory buffer.
 			bool Save(Buffer<byte> &buffer, int compression)
 			{
+				bool result = false;
+
 				if (this->Size())
 				{
-					bool result;
-					fipImage image;
-					fipMemoryIO mem;
+					DWORD size;
+					byte *data;
+					auto *mem 	= FreeImage_OpenMemory();
+					auto *image = this->ToFib();
 
-					this->ToFip(image);
-
-					switch (compression)
+					if (image)
 					{
-						case 0: 	result = image.saveToMemory(FIF_PNG, mem, PNG_DEFAULT);			break;
-						case 1: 	result = image.saveToMemory(FIF_JPEG, mem, JPEG_QUALITYGOOD);	break;
-						default:	result = image.saveToMemory(FIF_JPEG, mem, JPEG_QUALITYNORMAL);	break;
-					}
-
-					if (result)
-					{
-						DWORD size;
-						byte *data;
-
-						if (mem.acquire(&data, &size) && size > 0)
+						switch (compression)
 						{
-							buffer.Set(data, size);
-							return true;
+							case 0:		result = FreeImage_SaveToMemory(FIF_PNG, image, mem, PNG_DEFAULT);			break;
+							case 1:		result = FreeImage_SaveToMemory(FIF_JPEG, image, mem, JPEG_QUALITYGOOD);	break;
+							default:	result = FreeImage_SaveToMemory(FIF_JPEG, image, mem, JPEG_QUALITYNORMAL);	break;
 						}
+
+						FreeImage_Unload(image);
 					}
+
+					if (result && FreeImage_AcquireMemory(mem, &data, &size))
+					{
+						buffer.Set(data, size);
+					}
+					else result = false;
+
+					FreeImage_CloseMemory(mem);
 				}
 
 				return false;
@@ -407,33 +451,7 @@ namespace emergent
 
 		protected:
 			ImageBase(int type, int depth, int width = 0, int height = 0)
-				: type(type), depth(depth), width(width), height(height), buffer(width * height * depth), lookup()
-			{
-				switch (depth)
-				{
-					case 1: this->toFipPel 		= [](T *src, byte *dst) { *dst = (byte)*src; };
-							this->fromFipPel	= [](byte *src, T *dst) { *dst = *src; };
-							break;
-
-					#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
-						case 3: this->toFipPel 		= [](T *src, byte *dst) { dst[0] = (byte)src[2]; dst[1] = (byte)src[1]; dst[2] = (byte)src[0]; };
-								this->fromFipPel	= [](byte *src, T *dst) { dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; };
-					#else
-						case 3: this->toFipPel 		= [](T *src, byte *dst) { *dst++ = (byte)*src++; *dst++ = (byte)*src++; *dst++ = (byte)*src++; };
-								this->fromFipPel	= [](byte *src, T *dst) { *dst++ = *src++; *dst++ = *src++; *dst++ = *src++; };
-					#endif
-								break;
-
-					#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
-						case 4: this->toFipPel 		= [](T *src, byte *dst) { dst[0] = (byte)src[2]; dst[1] = (byte)src[1]; dst[2] = (byte)src[0]; dst[3] = (byte)src[3]; };
-								this->fromFipPel	= [](byte *src, T *dst) { dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; dst[3] = src[3]; };
-					#else
-						case 4: this->toFipPel 		= [](T *src, byte *dst) { *dst++ = (byte)*src++; *dst++ = (byte)*src++; *dst++ = (byte)*src++; *dst++ = (byte)*src++; };
-								this->fromFipPel	= [](byte *src, T *dst) { *dst++ = *src++; *dst++ = *src++; *dst++ = *src++; *dst++ = *src++; };
-					#endif
-								break;
-				}
-			}
+				: type(type), depth(depth), width(width), height(height), buffer(width * height * depth), lookup() {}
 
 			/// Image type
 			int type;
@@ -455,71 +473,50 @@ namespace emergent
 
 	private:
 
-			/// Pixel converters that go between a pixel of the current image type
-			/// and that of a fipImage taking byte order into account.
-			std::function<void(T*, byte*)> toFipPel		= nullptr;
-			std::function<void(byte*, T*)> fromFipPel	= nullptr;
+			inline void SWAPBYTES(T& a, T& b) { a ^= b; b ^= a; a ^= b; }
 
-
-			/// Convert this image to a fipImage
-			bool ToFip(fipImage &image)
+			FIBITMAP *ToFib()
 			{
-				image.setSize(FIT_BITMAP, this->width, this->height, this->depth * 8);
+				auto *result = FreeImage_ConvertFromRawBits(this->buffer, this->width, this->height, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
-				int x, y;
-				int width 			= this->width;
-				int height			= this->height;
-				int line			= width * this->depth;
-				int pad 			= image.getScanWidth() - line;
-				T *src				= this->buffer;
-				byte *dst 			= image.accessPixels();
-
-
-				for (y=0; y<height; y++, dst += pad)
-				{
-					for (x=0; x<width; x++, src += this->depth, dst += this->depth)
+				#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
+					if (result && this->depth > 1)
 					{
-						this->toFipPel(src, dst);
+						int x, y;
+						byte *data	= FreeImage_GetBits(result);
+						int jump	= FreeImage_GetPitch(result) - this->width * this->depth;
+
+						for (y=0; y<this->height; y++, data += jump)
+						{
+							for (x=0; x<this->width; x++, data += this->depth)
+							{
+								SWAPBYTES(data[0], data[2]);
+							}
+						}
 					}
-				}
+				#endif
 
-
-				image.flipVertical();
-
-				return true;
+				return result;
 			}
 
 
-			/// Read a fipImage into this
-			bool FromFip(fipImage &image)
+			bool FromFib(FIBITMAP *image)
 			{
-				switch (this->type)
-				{
-					case Depth::ID_GREY: 	image.convertToGrayscale();	break;
-					case Depth::ID_RGB:		image.convertTo24Bits();	break;
-					case Depth::ID_RGBA:	image.convertTo32Bits();	break;
-				}
+				this->width 	= FreeImage_GetWidth(image);
+				this->height	= FreeImage_GetHeight(image);
 
-				image.flipVertical();
+				this->buffer.Resize(this->width * this->height * this->depth);
 
-				int x, y;
-				int width	= this->width	= image.getWidth();
-				int height	= this->height	= image.getHeight();
-				int line	= width * this->depth;
-				int pad		= image.getScanWidth() - line;
+				FreeImage_ConvertToRawBits(this->buffer, image, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
-				this->buffer.Resize(width * height * this->depth);
-
-				byte *src 	= image.accessPixels();
-				T *dst		= this->buffer;
-
-				for (y=0; y<height; y++, src += pad)
-				{
-					for (x=0; x<width; x++, src += this->depth, dst += this->depth)
+				#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
+					if (this->depth > 1)
 					{
-						this->fromFipPel(src, dst);
+						byte *end = this->buffer + this->width * this->height * this->depth;
+
+						for (byte *data = this->buffer; data < end; data += this->depth) SWAPBYTES(data[0], data[2]);
 					}
-				}
+				#endif
 
 				return true;
 			}
