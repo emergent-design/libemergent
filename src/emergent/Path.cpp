@@ -8,7 +8,10 @@
 
 	const char SEPARATOR = '/';
 #endif
-//#elif _WIN32
+
+#ifdef _WIN32
+	const char SEPARATOR = '\\';
+#endif
 
 using namespace std;
 
