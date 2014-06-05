@@ -236,6 +236,7 @@ namespace emergent
 			}
 
 
+
 			/// Save image to a memory buffer.
 			bool Save(Buffer<byte> &buffer, int compression)
 			{
@@ -269,7 +270,7 @@ namespace emergent
 					FreeImage_CloseMemory(mem);
 				}
 
-				return false;
+				return result;
 			}
 
 
