@@ -135,6 +135,18 @@ namespace emergent
 				return result;
 			}
 
+			///Check if all the pixels in the image are set to the same value (regardless of image depth)
+			bool IsBlank(T reference = 0)
+			{
+				T* src 		= this->buffer;
+				int size 	= this->buffer.Size();
+				for (int i = 0; i < size; i++)
+				{
+					if(*src++ != reference) return false;
+				}
+				return true;
+			}
+
 
 			/// Clamp the current image data (regardless of image depth) to the supplied
 			/// lower (black) and upper (white) limits.
