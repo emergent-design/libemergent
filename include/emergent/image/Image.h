@@ -647,8 +647,8 @@ namespace emergent
 				{
 					int i, j, k;
 					int line	= this->width * D::size;
-					int w 		= min(image.Width(), this->width - x);
-					int h 		= min(image.Height(), this->height - y);
+					int w 		= std::min(image.Width(), this->width - x);
+					int h 		= std::min(image.Height(), this->height - y);
 					int js		= line - w * D::size;
 					int ji		= image.Width() * D::size - w * D::size;
 					T *ps 		= this->buffer + y * line + x * D::size;
