@@ -11,7 +11,7 @@
 /// The primary method for registering a type, this simply creates an instance
 /// of the Type info class for a specific derived class type. To be used in the
 /// cpp file for that type.
-#define REGISTER_TYPE(base, name) emergent::Type<base> name##_type(#name, [] { return new name; });
+#define REGISTER_TYPE(base, name) static emergent::Type<base> name##_type(#name, [] { return new name; });
 
 
 namespace emergent
@@ -23,7 +23,7 @@ namespace emergent
 	{
 		protected:
 
-			/// The global list of type masters. There is a sinle master for
+			/// The global list of type masters. There is a single master for
 			/// each base class type used to register other types.
 			static std::map<std::string, std::shared_ptr<TypeBase>> masters;
 
