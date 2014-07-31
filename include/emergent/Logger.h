@@ -15,13 +15,15 @@
 
 namespace emergent
 {
-
 	/// Log a formatted message.
 	#define FLOG(v, message, ...) LOG(v, tfm::format(message, __VA_ARGS__))
 
 	/// Log a message.
-	#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, __PRETTY_FUNCTION__, message); }
-
+	#ifdef __GNUC__
+		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, __PRETTY_FUNCTION__, message); }
+	#else
+		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, "Unknown", message); }
+	#endif
 
 	const std::string NOW();	///< Produce a string timestamp
 	const std::string FNOW();	///< Produce a string timestamp suitable for filenames

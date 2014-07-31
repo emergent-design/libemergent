@@ -11,7 +11,11 @@ namespace emergent
 		tm result;
 		time_t now = time(0);
 
-		localtime_r(&now, &result);
+		#ifdef __GNUC__
+			localtime_r(&now, &result);	
+		#else
+			localtime_s(&result, &now);
+		#endif
 
 		return result;
 	}

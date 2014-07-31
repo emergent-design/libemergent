@@ -3,8 +3,9 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
-#include <cxxabi.h>
-
+#ifdef __GNUC__
+	#include <cxxabi.h>
+#endif
 // Compile the xml parser in
 #include <emergent/xml/pugixml.cpp>
 
@@ -15,10 +16,14 @@ namespace emergent
 {
 	string demangle(string name)
 	{
-		char *demangled	= abi::__cxa_demangle(name.c_str(), 0, 0, 0);
-		string result	= demangled;
-		free(demangled);
-		return result;
+		#ifdef __GNUC__
+			char *demangled	= abi::__cxa_demangle(name.c_str(), 0, 0, 0);
+			string result	= demangled;
+			free(demangled);
+			return result;
+		#else
+			return name;
+		#endif
 	}
 
 
