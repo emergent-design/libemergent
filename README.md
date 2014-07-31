@@ -22,7 +22,7 @@ Linux
 -----
 
 ```bash
-$ sudo apt-get install libfreeimage-dev
+$ sudo apt-get install build-essential libfreeimage-dev
 $ premake4 gmake
 $ make
 ```
