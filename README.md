@@ -40,7 +40,7 @@ Windows (mingw)
 > mingw32-make
 ```
 
-To build a 64-bit library you will need to install the appropriate version of MinGW and possibly
+To build a 64-bit library you will need to install the appropriate version of [MinGW](http://mingw-w64.sourceforge.net/) and possibly
 build the FreeImage library manually.
 
 
