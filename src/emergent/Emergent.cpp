@@ -64,16 +64,16 @@ namespace emergent
 	const string lowercase(string text)
 	{
 		transform(text.begin(), text.end(), text.begin(), ::tolower);
-		
+
 		return text;
 	}
-	
+
 
 	const string hyphenate(string text)
 	{
 		string result;
 		result.reserve(text.length());
-		
+
 		for (int i=0; i<text.size(); i++)
 		{
 			if (isupper(text[i]))
@@ -83,7 +83,14 @@ namespace emergent
 			}
 			else result.append(1, text[i]);
 		}
-		
+
 		return result;
+	}
+
+
+	const string trim(string text, const char c)
+	{
+		auto start = text.find_first_not_of(c);
+		return start == string::npos ? "" : text.substr(start, text.find_last_not_of(c) - start + 1);
 	}
 }

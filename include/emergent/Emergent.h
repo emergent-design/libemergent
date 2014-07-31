@@ -28,6 +28,9 @@ namespace emergent
 	/// Generate a lowercase hyphenated string from a camel-cased one
 	const std::string hyphenate(std::string text);
 
+	/// Trim a string (both ends) of the given character
+	const std::string trim(std::string text, const char c);
+
 	/// Split a string into a list of strings wherever the specified delimiters are found
 	std::vector<std::string> explode(const std::string &text, const std::string &delimiters);
 
