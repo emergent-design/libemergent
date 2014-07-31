@@ -56,5 +56,5 @@ Copy the FreeImage header to the include folder of libemergent.
 The generated solution can then be opened in Visual Studio, updated to the latest version and then
 built.
 
-*Note*: The msvc buid will generate a static library since this avoids polluting the headers with
+*Note*: The msvc build will generate a static library since this avoids polluting the headers with
 `__declspec(dllexport)` and `__declspec(dllimport)`.
