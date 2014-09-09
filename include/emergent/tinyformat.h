@@ -125,7 +125,7 @@ namespace tfm = tinyformat;
 
 // Define for C++11 variadic templates which make the code shorter & more
 // general.  If you don't define this, C++11 support is autodetected below.
-#define TINYFORMAT_USE_VARIADIC_TEMPLATES
+//#define TINYFORMAT_USE_VARIADIC_TEMPLATES
 
 
 //------------------------------------------------------------------------------
@@ -133,6 +133,7 @@ namespace tfm = tinyformat;
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 #ifndef TINYFORMAT_ERROR
 #   define TINYFORMAT_ERROR(reason) assert(0 && reason)
