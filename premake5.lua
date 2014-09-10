@@ -22,14 +22,16 @@ solution "emergent"
 			postbuildcommands	{ "./strip lib/libemergent.so" }
 			
 		configuration "not vs*"
-			flags				"Symbols"
-			buildoptions		{ "-Wall", "-Wno-sign-compare", "-std=c++11", "-O3", "-D_FORTIFY_SOURCE=2" }
-			linkoptions			{ "-Wl,-soname,libemergent.so.0" }
+			flags			"Symbols"
+			buildoptions	{ "-Wall", "-Wno-sign-compare", "-std=c++11", "-O3", "-D_FORTIFY_SOURCE=2" }
+			linkoptions		{ "-Wl,-soname,libemergent.so.0" }
 
 		configuration "vs*"
-			kind "StaticLib"
+			kind		"StaticLib"
+			defines		"NOMINMAX"
+			targetname	"emergent_%{cfg.buildcfg}_%{cfg.platform}"
+			
 			configuration "debug"
 				flags		"Symbols"
-				targetname	"emergentd"
 			configuration "release"
 				optimize	"Full"
