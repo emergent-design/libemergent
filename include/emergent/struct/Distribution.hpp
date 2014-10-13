@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emergent/struct/Buffer.h>
+#include <emergent/struct/Buffer.hpp>
 #include <emergent/Maths.h>
 #include <vector>
 

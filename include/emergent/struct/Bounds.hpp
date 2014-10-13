@@ -32,7 +32,7 @@ namespace emergent
 		inline double normalise(T value) { return (this->range > 0) ? (double)(value - this->min) / (double)this->range : 0.0; }
 
 		/// Produces a random value within the given bounds
-		inline T random() { return this->min + (T)((double)this->range * nrand()); }
+		inline T random() { return this->min + (T)((double)this->range * Maths::nrand()); }
 	};
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <emergent/Emergent.h>
-#include <emergent/image/Depth.h>
+#include <emergent/image/Depth.hpp>
 
 
 namespace emergent

@@ -20,8 +20,10 @@ namespace emergent
 		/// Implicit string conversion
 		operator std::string() const { return this->path; }
 
-		/// Path concatenation operators
+		/// Path concatenation operator
 		Path &operator/=(const Path &p);
+
+		/// Path concatenation operator
 		Path operator/(const Path &p) const;
 
 		/// Returns the file extension. If no extension exists for the
@@ -69,8 +71,8 @@ namespace emergent
 		/// list is sorted using a quicksort.
 		std::vector<Path> children(bool sorted = true) const;
 
-		private:
 
+		private:
 			/// Adds a separator to the path if it is not empty
 			/// and does not already end in a separator
 			void append_separator();
@@ -81,5 +83,9 @@ namespace emergent
 
 
 	/// Helper so that a path can be passed to cout
-	std::ostream& operator<<(std::ostream &output, const Path &p);
+	inline std::ostream& operator<<(std::ostream &output, const Path &p)
+	{
+		return output << (std::string)p;
+	}
 }
+

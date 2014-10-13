@@ -43,7 +43,7 @@ namespace emergent
 			/// the derived type in question.
 			Type(std::string name, std::function<T *()> constructor) : constructor(constructor)
 			{
-				Master()->types[hyphenate(name)] = this;
+				Master()->types[String::hyphenate(name)] = this;
 			}
 
 

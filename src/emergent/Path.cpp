@@ -18,9 +18,6 @@ using namespace std;
 
 namespace emergent
 {
-	ostream& operator<<(ostream &output, const Path &p) { return output << (string)p; }
-
-
 	Path &Path::operator/=(const Path &p)
 	{
 		if (!p.empty())
@@ -91,7 +88,7 @@ namespace emergent
 		if (!this->path.empty() && this->path != "/")
 		{
 			// Skip the final character in case it is a trailing '/'
-			auto pos	= this->path.find_last_of(SEPARATOR, this->path.size() - 2);	
+			auto pos	= this->path.find_last_of(SEPARATOR, this->path.size() - 2);
 			return pos == 0 ? Path("/") : pos == string::npos ? Path() : Path(this->path.substr(0, pos));
 		}
 

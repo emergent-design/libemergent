@@ -28,7 +28,7 @@ namespace emergent
 			template <class T> struct Colour
 			{
 				virtual ~Colour() {}
-				
+
 				/// Apply this colour at the given address
 				virtual void Apply(T *src) = 0;
 
@@ -36,7 +36,7 @@ namespace emergent
 				/// address using the required alpha.
 				virtual void Blend(T *src, double alpha) = 0;
 			};
-			
+
 
 			/// Structure representing greyscale (8-bit)
 			struct Grey

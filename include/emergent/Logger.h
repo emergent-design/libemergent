@@ -22,7 +22,7 @@ namespace emergent
 	#ifdef __GNUC__
 		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, __PRETTY_FUNCTION__, message); }
 	#else
-		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, "Unknown", message); }
+		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, __func__, message); }
 	#endif
 
 	const std::string NOW();	///< Produce a string timestamp

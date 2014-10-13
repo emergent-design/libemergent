@@ -1,7 +1,7 @@
 #pragma once
 
 #include <emergent/Emergent.h>
-#include <emergent/struct/Bounds.h>
+#include <emergent/struct/Bounds.hpp>
 
 #include <fstream>
 #include <cstring>
@@ -338,8 +338,6 @@ namespace emergent
 /// data then it is output as hex.
 template <class T> std::ostream &operator << (std::ostream &output, const emergent::Buffer<T> &b)
 {
-	output << "Buffer (" << b.Size() << " bytes): ";
-
 	if (std::is_same<T, byte>::value)
 	{
 		output << std::hex << std::setfill('0');
@@ -351,6 +349,6 @@ template <class T> std::ostream &operator << (std::ostream &output, const emerge
 		for (int i=0; i<b.Size(); i++) output << b[i] << " ";
 	}
 
-	return output;
+	return output << " (" << b.Size() << " bytes)";
 }
 
