@@ -1,3 +1,13 @@
+libemergent0 (0.0.7) unstable; urgency=medium
+
+  * Added wrappers for the hiredis library.
+  * Tidying and renaming of headers to hpp where implementation exists in the header.
+  * Updated to pugixml 1.4
+  * Removed clamp specialisations (since they were slower that the generic ones).
+  * Moved global string and maths functions to static class members of String and Maths.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 13 Oct 2014 14:54:22 +0100
+
 libemergent0 (0.0.6) unstable; urgency=medium
 
   * Added utility classes for UUID and DateTime.
