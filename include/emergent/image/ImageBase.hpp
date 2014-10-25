@@ -4,11 +4,6 @@
 #include <emergent/image/Colours.hpp>
 #include <emergent/struct/Buffer.hpp>
 #include <emergent/struct/Distribution.hpp>
-// #include <emergent/Maths.h>
-
-// #include <stdexcept>
-// #include <typeinfo>
-// #include <functional>
 #include <FreeImage.h>
 
 

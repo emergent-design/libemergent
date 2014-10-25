@@ -4,7 +4,9 @@ solution "emergent"
 	includedirs		"include"
 	libdirs 		"lib"
 	excludes		{ "**.bak", "**~", "**/internal/**" }
-	
+
+	configuration "linux"
+		toolset "clang"
 	configuration "not vs*"
 		configurations  { "default" }
 		platforms		"native"
@@ -20,7 +22,7 @@ solution "emergent"
 
 		configuration "linux"
 			postbuildcommands	{ "./strip lib/libemergent.so" }
-			
+
 		configuration "not vs*"
 			flags			"Symbols"
 			buildoptions	{ "-Wall", "-Wno-sign-compare", "-std=c++11", "-O3", "-D_FORTIFY_SOURCE=2" }
@@ -30,7 +32,7 @@ solution "emergent"
 			kind		"StaticLib"
 			defines		"NOMINMAX"
 			targetname	"emergent_%{cfg.buildcfg}_%{cfg.platform}"
-			
+
 			configuration "debug"
 				flags		"Symbols"
 			configuration "release"

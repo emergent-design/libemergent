@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libemergent
+Description: Utility classes
+Version: 0.0.0
+Requires:
+Libs: -L${libdir} -lemergent
+Cflags: -I${includedir}/emergent
