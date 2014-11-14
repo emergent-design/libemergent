@@ -16,6 +16,19 @@ namespace redis
 	typedef std::function<void(string channel, string message)> broadcast;
 
 
+	struct Channel
+	{
+		string name;
+		bool pattern;
+
+		Channel() {}
+		Channel(string name)				: name(name), pattern(false) {}
+		Channel(string name, bool pattern)	: name(name), pattern(pattern) {}
+	};
+
+	bool operator <(const Channel &a, const Channel &b) { return a.name < b.name; }
+
+
 	class Subscription
 	{
 		public:
@@ -27,7 +40,7 @@ namespace redis
 			}
 
 
-			bool Initialise(broadcast onMessage, std::set<string> channels = {}, bool socket = false, string connection = "127.0.0.1", int port = 6379)
+			bool Initialise(broadcast onMessage, std::set<Channel> channels = {}, bool socket = false, string connection = "127.0.0.1", int port = 6379)
 			{
 				this->port			= port;
 				this->socket		= socket;
@@ -47,19 +60,23 @@ namespace redis
 			}
 
 
-			bool Add(string channel)
+			bool Add(string channel, bool pattern = false)
 			{
-				this->channels.insert(channel);
+				this->channels.insert({ channel, pattern });
 
-				return this->context ? redisAsyncCommand(this->context, &Subscription::OnMessage, nullptr, "SUBSCRIBE %s", channel.c_str()) == REDIS_OK : true;
+				return this->context
+					? redisAsyncCommand(this->context, &Subscription::OnMessage, nullptr, pattern ? "PSUBSCRIBE %s" : "SUBSCRIBE %s", channel.c_str()) == REDIS_OK
+					: true;
 			}
 
 
-			bool Remove(string channel)
+			bool Remove(string channel, bool pattern = false)
 			{
-				this->channels.erase(channel);
+				this->channels.erase({ channel, pattern });
 
-				return this->context ? redisAsyncCommand(this->context, nullptr, nullptr, "UNSUBSCRIBE %s", channel.c_str()) == REDIS_OK : true;
+				return this->context
+					? redisAsyncCommand(this->context, nullptr, nullptr, pattern ? "PUNSUBSCRIBE %s" : "UNSUBSCRIBE %s", channel.c_str()) == REDIS_OK
+					: true;
 			}
 
 
@@ -108,11 +125,15 @@ namespace redis
 				{
 					redisReply *r = (redisReply *)reply;
 
-					if (r->type == REDIS_REPLY_ARRAY && r->elements == 3)
+					if (r->type == REDIS_REPLY_ARRAY)
 					{
-						if (strcmp(r->element[0]->str, "message") == 0)
+						if (r->elements == 3 && strcmp(r->element[0]->str, "message") == 0)
 						{
 							((Subscription *)c->data)->onMessage(r->element[1]->str, std::string(r->element[2]->str, r->element[2]->len));
+						}
+						else if (r->elements == 4 && strcmp(r->element[0]->str, "pmessage") == 0)
+						{
+							((Subscription *)c->data)->onMessage(r->element[2]->str, std::string(r->element[3]->str, r->element[3]->len));
 						}
 					}
 				}
@@ -123,7 +144,13 @@ namespace redis
 			{
 				for (auto &c : ((Subscription *)context->data)->channels)
 				{
-					redisAsyncCommand(const_cast<redisAsyncContext*>(context), &Subscription::OnMessage, nullptr, "SUBSCRIBE %s", c.c_str());
+					redisAsyncCommand(
+						const_cast<redisAsyncContext*>(context),
+						&Subscription::OnMessage,
+						nullptr,
+						c.pattern ? "PSUBSCRIBE %s" : "SUBSCRIBE %s",
+						c.name.c_str()
+					);
 				}
 			}
 
@@ -140,6 +167,6 @@ namespace redis
 			broadcast onMessage			= nullptr;
 			redisAsyncContext *context	= nullptr;
 			struct ev_loop *loop		= nullptr;
-			std::set<string> channels;
+			std::set<Channel> channels;
 	};
 }}
