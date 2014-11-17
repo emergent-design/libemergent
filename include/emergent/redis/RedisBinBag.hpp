@@ -21,6 +21,10 @@ namespace redis
 	{
 		public:
 
+			using Redis::Set;
+			using Redis::Get;
+			using Redis::Publish;
+
 
 			template <typename T> bool Set(string key, Buffer<T> &buffer)
 			{
@@ -114,7 +118,7 @@ namespace redis
 					else FLOG(error, "Attempt to retrieve image failed at '%s', header does not match image metrics", key);
 				}
 
-				freeReplyObject(reply);
+				if (reply) freeReplyObject(reply);
 
 				return result;
 			}

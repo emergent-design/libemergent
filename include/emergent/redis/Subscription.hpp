@@ -26,7 +26,7 @@ namespace redis
 		Channel(string name, bool pattern)	: name(name), pattern(pattern) {}
 	};
 
-	bool operator <(const Channel &a, const Channel &b) { return a.name < b.name; }
+	static bool operator <(const Channel &a, const Channel &b) { return a.name < b.name; }
 
 
 	class Subscription

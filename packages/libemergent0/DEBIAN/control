@@ -6,7 +6,7 @@ Architecture: amd64
 Maintainer: Dan Parnham <dan@emergent-design.co.uk>
 Installed-Size: 2120
 Pre-Depends: multiarch-support
-Depends: libc6, libfreeimage3
+Depends: libc6, libfreeimage3, libhiredis0.10, libev4
 Description: A collection of useful classes
  Helpers for dealing with images, logging, file paths,
  types and some simple structures.
