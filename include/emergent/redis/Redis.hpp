@@ -105,9 +105,9 @@ namespace redis
 			// HLL?
 
 			// Publish
-			long Publish(string channel, string message)	{ return Command("PUBLISH %s %s", channel.c_str(), message.c_str()).AsLong(); }
-			long Publish(string channel, long value)		{ return Command("PUBLISH %s %ld", channel.c_str(), value).AsLong(); }
-
+			long Publish(string channel, string message)		{ return Command("PUBLISH %s %s", channel.c_str(), message.c_str()).AsLong(); }
+			long Publish(string channel, long value)			{ return Command("PUBLISH %s %ld", channel.c_str(), value).AsLong(); }
+			long PublishBinary(string channel, string message)	{ return Command("PUBLISH %s %b", channel.c_str(), message.data(), (size_t)message.size()).AsLong(); }
 			// Transactions?
 
 		protected:
