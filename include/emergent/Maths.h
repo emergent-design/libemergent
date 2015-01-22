@@ -30,9 +30,22 @@ namespace emergent
 
 			template <class T> static inline T clamp(double value)
 			{
-				return (value > std::numeric_limits<T>::max()) ? std::numeric_limits<T>::max() : (value < std::numeric_limits<T>::min()) ? std::numeric_limits<T>::min() : (T)value;
+				if (std::is_floating_point<T>::value)
+				{
+					return (value > std::numeric_limits<T>::max()) ? std::numeric_limits<T>::max() : (value < std::numeric_limits<T>::min()) ? std::numeric_limits<T>::min() : (T)value;
+				}
+				else
+				{
+					long v = lrint(value);
+
+					return (v > std::numeric_limits<T>::max()) ? std::numeric_limits<T>::max() : (v < std::numeric_limits<T>::min()) ? std::numeric_limits<T>::min() : (T)v;
+				}
 			}
 
+
+// template <class T, class = typename std::enable_if<std::is_arithmetic<T>::value>::type> tree(const T &value) :
+	//			type(std::is_floating_point<T>::value ? Type::Floating : Type::Integer),
+	//			leaf(new container<typename std::conditional<std::is_floating_point<T>::value, double, long>::type>(value)) {}
 
 			// These are not actually faster!!
 			// /// Specialisation of the clamp function for byte values (this implementation is faster than
@@ -66,7 +79,5 @@ namespace emergent
 	template <> inline unsigned long Maths::clamp(unsigned long value)	{ return value; }
 	template <> inline int Maths::clamp(int value)						{ return value; }
 	template <> inline double Maths::clamp(double value)				{ return value; }
-
-	template <> inline byte Maths::clamp(double value) { long v = lrint(value); return (v > 255) ? 255 : (v < 0) ? 0 : v; }
 }
 
