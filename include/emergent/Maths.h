@@ -40,7 +40,7 @@ namespace emergent
 			// template <> inline byte clamp(long value) 			{ return (value > 255) ? 255 : (value < 0) ? 0 : value; }
 			// template <> inline byte clamp(unsigned long value)	{ return (value > 255) ? 255 : value; }
 			// template <> inline byte clamp(int value)			{ return (value > 255) ? 255 : (value < 0) ? 0 : value; }
-			// template <> inline byte clamp(double value) 		{ long v = lrint(value); return (v > 255) ? 255 : (v < 0) ? 0 : v; }
+			//template <> inline byte clamp(double value) 		{ long v = lrint(value); return (v > 255) ? 255 : (v < 0) ? 0 : v; }
 
 			// /// Specialisation of the clamp function for char values
 			// template <> inline char clamp(long value) 			{ return (value > 127) ? 127 : (value < -127) ? -127 : value; }
@@ -66,5 +66,7 @@ namespace emergent
 	template <> inline unsigned long Maths::clamp(unsigned long value)	{ return value; }
 	template <> inline int Maths::clamp(int value)						{ return value; }
 	template <> inline double Maths::clamp(double value)				{ return value; }
+
+	template <> inline byte Maths::clamp(double value) { long v = lrint(value); return (v > 255) ? 255 : (v < 0) ? 0 : v; }
 }
 
