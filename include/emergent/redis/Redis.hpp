@@ -6,6 +6,8 @@
 namespace emergent {
 namespace redis
 {
+	using namespace std::chrono;
+
 	class Redis
 	{
 		public:
@@ -16,7 +18,7 @@ namespace redis
 			}
 
 
-			bool Initialise(bool socket = false, string connection = "127.0.0.1", int port = 6379)
+			virtual bool Initialise(bool socket = false, string connection = "127.0.0.1", int port = 6379)
 			{
 				this->port			= port;
 				this->socket		= socket;
@@ -26,11 +28,16 @@ namespace redis
 			}
 
 
-			template <typename... Args> Reply Command(const char *command, Args... arguments)
+			// Yes, this uses C-style ellipses, but you cannot have a virtual templated parameter
+			// pack function (the multiplexer version must be able to override this).
+			virtual Reply Command(const char *command, ...)
 			{
 				if (this->context)
 				{
-					Reply result = redisCommand(this->context, command, arguments...);
+					va_list arguments;
+					va_start(arguments, command);
+						Reply result = redisvCommand(this->context, command, arguments);
+					va_end(arguments);
 
 					if (!result.Ok()) this->Connect();
 
@@ -119,9 +126,17 @@ namespace redis
 				{
 					if (this->context->err) FLOG(error, "Problem with redis connection: %s", this->context->errstr);
 					redisFree(this->context);
+					this->context = nullptr;
 				}
 
-				this->context = this->socket ? redisConnectUnix(this->connection.c_str()) : redisConnect(this->connection.c_str(), this->port);
+				// Limit the time between reconnection attempts
+				if (duration_cast<milliseconds>(steady_clock::now() - this->lastAttempt).count() < this->timeout)
+				{
+					return false;
+				}
+
+				this->context 		= this->socket ? redisConnectUnix(this->connection.c_str()) : redisConnect(this->connection.c_str(), this->port);
+				this->lastAttempt	= steady_clock::now();
 
 				if (this->context->err)
 				{
@@ -136,9 +151,11 @@ namespace redis
 			}
 
 
-			int port				= -1;
-			bool socket				= false;
-			string connection		= "127.0.0.1";
-			redisContext *context	= nullptr;
+			int port								= -1;
+			int timeout								= 1000;
+			bool socket								= false;
+			string connection						= "127.0.0.1";
+			redisContext *context					= nullptr;
+			time_point<steady_clock> lastAttempt;
 	};
 }}
