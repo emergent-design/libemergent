@@ -284,7 +284,7 @@ namespace emergent
 			/// Calculate the distribution statistics of the image
 			/// mask can be optionally passed in; zero values in the mask tell distribution to
 			/// ignore the corresponding pixels in the image.
-			distribution Stats(Buffer<byte>* mask = nullptr)
+			distribution Stats(Buffer<byte> *mask = nullptr)
 			{
 				return distribution(this->buffer, mask);
 			}

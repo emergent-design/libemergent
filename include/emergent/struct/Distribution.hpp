@@ -31,21 +31,21 @@ namespace emergent
 
 
 		/// Constructor with automatic analysis of supplied data
-		template <class T> distribution(std::vector<T> &data, std::vector<byte>* mask = nullptr)
+		template <class T> distribution(std::vector<T> &data, std::vector<byte> *mask = nullptr)
 		{
 			this->analyse(data, mask);
 		}
 
 
 		/// Constructor with automatic analysis of supplied data
-		template <class T> distribution(T *data, int size, byte* mask = nullptr)
+		template <class T> distribution(T *data, int size, byte *mask = nullptr)
 		{
 			this->analyse(data, size, mask);
 		}
 
 
 		/// Generate stats from a buffer
-		template <class T> bool analyse(Buffer<T> &data, Buffer<byte>* mask)
+		template <class T> bool analyse(Buffer<T> &data, Buffer<byte> *mask)
 		{
 			if(mask)
 			{
@@ -60,7 +60,7 @@ namespace emergent
 
 
 		/// Generate stats from a vector
-		template <class T> bool analyse(std::vector<T> &data, std::vector<byte>* mask = nullptr)
+		template <class T> bool analyse(std::vector<T> &data, std::vector<byte> *mask = nullptr)
 		{
 			if(mask)
 			{
@@ -75,7 +75,8 @@ namespace emergent
 
 
 		/// Generate the distribution stats
-		template <class T> bool analyse(T* data, int size, byte* mask = nullptr)
+		/// If mask if used it MUST be the same size as data.
+		template <class T> bool analyse(T *data, int size, byte *mask = nullptr)
 		{
 			if (size > 0)
 			{
