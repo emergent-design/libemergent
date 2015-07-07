@@ -24,42 +24,58 @@ namespace emergent
 
 
 		/// Constructor with automatic analysis of supplied buffer
-		template <class T> distribution(Buffer<T> &data)
+		template <class T> distribution(Buffer<T> &data, Buffer<byte> *mask = nullptr)
 		{
-			this->analyse(data);
+			this->analyse(data, mask);
 		}
 
 
 		/// Constructor with automatic analysis of supplied data
-		template <class T> distribution(std::vector<T> &data)
+		template <class T> distribution(std::vector<T> &data, std::vector<byte>* mask = nullptr)
 		{
-			this->analyse(data);
+			this->analyse(data, mask);
 		}
 
 
 		/// Constructor with automatic analysis of supplied data
-		template <class T> distribution(T *data, int size)
+		template <class T> distribution(T *data, int size, byte* mask = nullptr)
 		{
-			this->analyse(data, size);
+			this->analyse(data, size, mask);
 		}
 
 
 		/// Generate stats from a buffer
-		template <class T> bool analyse(Buffer<T> &data)
+		template <class T> bool analyse(Buffer<T> &data, Buffer<byte>* mask)
 		{
-			return this->analyse(data.Data(), data.Size());
+			if(mask)
+			{
+				if(mask->Size() == data.Size())
+				{
+					return this->analyse(data.Data(), data.Size(), mask->Data());
+				}
+				else return false;
+			}
+			else return this->analyse(data.Data(), data.Size());
 		}
 
 
 		/// Generate stats from a vector
-		template <class T> bool analyse(std::vector<T> &data)
+		template <class T> bool analyse(std::vector<T> &data, std::vector<byte>* mask = nullptr)
 		{
-			return this->analyse(&data.front(), data.size());
+			if(mask)
+			{
+				if (mask->size() == data.size())
+				{
+					return this->analyse(&data.front(), data.size(), &mask->front());
+				}
+				else return false;
+			}
+			else return this->analyse(&data.front(), data.size());
 		}
 
 
 		/// Generate the distribution stats
-		template <class T> bool analyse(T* data, int size)
+		template <class T> bool analyse(T* data, int size, byte* mask = nullptr)
 		{
 			if (size > 0)
 			{
@@ -68,14 +84,33 @@ namespace emergent
 				double max		= value;
 				double min		= value;
 				double squared	= value * value;
-
-				for (int i=1; i<size; i++)
+				if (!mask)
 				{
-					value		 = (double)*data++;
-					sum			+= value;
-					squared		+= value * value;
-					if (value < min) min = value;
-					if (value > max) max = value;
+					for (int i=1; i<size; i++)
+					{
+						value		 = (double)*data++;
+						sum			+= value;
+						squared		+= value * value;
+						if (value < min) min = value;
+						if (value > max) max = value;
+					}
+				}
+				else
+				{
+					int count = 0;
+					for (int i=1; i<size; i++, mask++, data++)
+					{
+						if(*mask)
+						{
+							value		 = (double)*data;
+							sum			+= value;
+							squared		+= value * value;
+							if (value < min) min = value;
+							if (value > max) max = value;
+							count++;
+						}
+					}
+					size = count;
 				}
 
 				this->sum		= sum;
@@ -83,8 +118,8 @@ namespace emergent
 				this->samples	= size;
 				this->min		= min;
 				this->max		= max;
-				this->mean		= sum / size;
-				this->variance	= (squared / size) - (this->mean * this->mean);
+				this->mean		= size? sum / size : 0;
+				this->variance	= size? (squared / size) - (this->mean * this->mean) : 0;
 				return true;
 			}
 
