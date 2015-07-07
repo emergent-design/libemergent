@@ -75,7 +75,7 @@ namespace emergent
 
 
 		/// Generate the distribution stats
-		/// If mask if used it MUST be the same size as data.
+		/// If mask is used it MUST be the same size as data.
 		template <class T> bool analyse(T *data, int size, byte *mask = nullptr)
 		{
 			if (size > 0)
