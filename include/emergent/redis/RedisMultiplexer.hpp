@@ -23,16 +23,37 @@ namespace redis
 
 			RedisMultiplexer()
 			{
-				this->run		= true;
-				this->thread	= std::thread(&RedisMultiplexer::Entry, this);
+				this->run = false;
 			}
 
 
 			virtual ~RedisMultiplexer()
 			{
-				this->run = false;
-				this->condition.notify_one();
-				this->thread.join();
+				if (this->run)
+				{
+					this->run = false;
+					this->condition.notify_one();
+					this->thread.join();
+				}
+			}
+
+
+			virtual bool Initialise(bool socket = false, string connection = "127.0.0.1", int port = 6379)
+			{
+				if (!this->run)
+				{
+					std::lock_guard<std::mutex> lock(this->cs);
+
+					if (Redis::Initialise(socket, connection, port))
+					{
+						this->run		= true;
+						this->thread	= std::thread(&RedisMultiplexer::Entry, this);
+
+						return true;
+					}
+				}
+
+				return false;
 			}
 
 
@@ -43,7 +64,6 @@ namespace redis
 				std::unique_lock<std::mutex> lock(expectation->cs);
 
 				this->cs.lock();
-
 					if (this->context)
 					{
 						va_list arguments;
@@ -100,10 +120,15 @@ namespace redis
 				redisReply *reply;
 				std::unique_lock<std::mutex> lock(this->cs);
 
-				bool connected = this->context;
+				bool connected = this->context || this->Connect();
 
 				while (this->run)
 				{
+					if (this->expectations.empty())
+					{
+						this->condition.wait(lock);
+					}
+
 					if (connected)
 					{
 						while (!this->expectations.empty())
@@ -113,16 +138,15 @@ namespace redis
 							this->expectations.front()->HandleReply(result == REDIS_OK ? reply : nullptr);
 							this->expectations.pop();
 
-							if (result != REDIS_OK) connected = false;
+							if (result != REDIS_OK)
+							{
+								connected = false;
+								break;
+							}
 						}
 					}
 
-					if (!connected)
-					{
-						connected = this->Connect();
-					}
-
-					this->condition.wait(lock);
+					if (!connected) connected = this->Connect();
 				}
 
 				// Make sure we're not blocking any calling threads before exiting
