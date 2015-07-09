@@ -58,6 +58,17 @@ namespace emergent
 			);
 		}
 
+		std::string FormatDateISO()
+		{
+			tm t;
+			gmtime_r(&this->timestamp, &t);
+
+			return tfm::format(
+				"%04d-%02d-%02d",
+				1900+t.tm_year, 1+t.tm_mon, t.tm_mday
+			);
+		}
+
 
 		bool operator <(const DateTime &time) const		{ return this->timestamp < time.timestamp; }
 		bool operator >(const DateTime &time) const		{ return this->timestamp > time.timestamp; }
