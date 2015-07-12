@@ -18,17 +18,19 @@ namespace redis
 			// Constructor takes ownership of the reply. It will free the reply object
 			// and any associated elements (if it is an array type) when it goes out
 			// of scope.
-			Reply(void *reply)
+			Reply(void *reply, bool owner = true)
 			{
 				if (reply)
 				{
-					this->reply = { (redisReply *)reply, [](redisReply *r) { freeReplyObject(r); }};
+					this->reply = { (redisReply *)reply, [=](redisReply *r) {
+						if (owner) freeReplyObject(r);
+					}};
 
 					if (this->reply->type == REDIS_REPLY_ARRAY && this->reply->element)
 					{
 						for (int i=0; i<this->reply->elements; i++)
 						{
-							this->elements.emplace_back(this->reply->element[i]);
+							this->elements.emplace_back(this->reply->element[i], false);
 						}
 					}
 				}
