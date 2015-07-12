@@ -4,7 +4,7 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
-#include <emergent/redis/Redis.hpp>
+#include <emergent/redis/RedisBinBag.hpp>
 
 
 namespace emergent {
@@ -17,7 +17,7 @@ namespace redis
 	// reason: the redis documentation suggests that 10k commands is a reasonable size
 	// for pipelining, yet running with 10k threads is probably a bad idea so it is
 	// unlikely that an application will cause excessive pipelining.
-	class RedisMultiplexer : public Redis
+	class RedisMultiplexer : public RedisBinBag
 	{
 		public:
 
