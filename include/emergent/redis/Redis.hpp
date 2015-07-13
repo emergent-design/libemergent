@@ -108,7 +108,25 @@ namespace redis
 			bool SetRemove(string key, string member)			{ return Command("SREM %s %s", key.c_str(), member.c_str()).AsBool(); }
 			vector<string> Union(string a, string b)			{ return Command("SUNION %s %s", a.c_str(), b.c_str()).AsStringArray(); }
 
-			// Sorted Sets?
+			// Sorted Sets
+			bool SortedAdd(string key, string member, double score = 0.0)						{ return Command("ZADD %s %g %s", key.c_str(), score, member.c_str()).AsBool(); }
+			long SortedCardinality(string key)													{ return Command("ZCARD %s", key.c_str()).AsLong(); }
+			long SortedCount(string key, double min, double max)								{ return Command("ZCOUNT %s %g %g", key.c_str(), min, max).AsLong(); }
+			double SortedIncrement(string key, double increment, string member)					{ return Command("ZINCRBY %s %g %s", key.c_str(), increment, member.c_str()).AsDouble(); }
+			long SortedLexCount(string key, string min = "-", string max = "+")					{ return Command("ZLEXCOUNT %s %s %s", key.c_str(), min.c_str(), max.c_str()).AsLong(); }
+			vector<string> SortedRange(string key, long start, long stop)						{ return Command("ZRANGE %s %ld %ld", key.c_str(), start, stop).AsStringArray(); }
+			vector<string> SortedRangeByLex(string key, string min = "-", string max = "+")		{ return Command("ZRANGEBYLEX %s %s %s", key.c_str(), min.c_str(), max.c_str()).AsStringArray(); }
+			vector<string> SortedRangeByScore(string key, double min, double max)				{ return Command("ZRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsStringArray(); }
+			long SortedRank(string key, string member)											{ return Command("ZRANK %s %s", key.c_str(), member.c_str()).AsLong(); }
+			bool SortedRemove(string key, string member)										{ return Command("ZREM %s %s", key.c_str(), member.c_str()).AsBool(); }
+			long SortedRemoveByLex(string key, string min, string max)							{ return Command("ZREMRANGEBYLEX %s %s %s", key.c_str(), min.c_str(), max.c_str()).AsLong(); }
+			long SortedRemoveByRank(string key, long start, long stop)							{ return Command("ZREMRANGEBYRANK %s %ld %ld", key.c_str(), start, stop).AsLong(); }
+			long SortedRemoveByScore(string key, double min, double max)						{ return Command("ZREMRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsLong(); }
+			vector<string> SortedRevRange(string key, long start, long stop)					{ return Command("ZREVRANGE %s %ld %ld", key.c_str(), start, stop).AsStringArray(); }
+			vector<string> SortedRevRangeByLex(string key, string max = "+", string min = "-")	{ return Command("ZREVRANGEBYLEX %s %s %s", key.c_str(), max.c_str(), min.c_str()).AsStringArray(); }
+			vector<string> SortedRevRangeByScore(string key, double min, double max)			{ return Command("ZREVRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsStringArray(); }
+			long SortedRevRank(string key, string member)										{ return Command("ZREVRANK %s %s", key.c_str(), member.c_str()).AsLong(); }
+			double SortedScore(string key, string member)										{ return Command("ZSCORE %s %s", key.c_str(), member.c_str()).AsDouble(); }
 			// HLL?
 
 			// Publish
