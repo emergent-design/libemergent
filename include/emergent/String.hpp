@@ -35,11 +35,17 @@ namespace emergent
 			/// Load a whole file into a string
 			static string load(string path)
 			{
-				std::stringstream buffer;
+				std::string result;
+				std::ifstream in(path, std::ios::in | std::ios::binary);
 
-				buffer << std::ifstream(path).rdbuf();
+				if (in)
+				{
+					result.resize(in.seekg(0, std::ios::end).tellg());
+					in.seekg(0, std::ios::beg).read(&result[0], result.size());
+					in.close();
+				}
 
-				return buffer.str();
+				return result;
 			}
 
 
