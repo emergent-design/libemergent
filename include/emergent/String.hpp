@@ -42,7 +42,6 @@ namespace emergent
 				{
 					result.resize(in.seekg(0, std::ios::end).tellg());
 					in.seekg(0, std::ios::beg).read(&result[0], result.size());
-					in.close();
 				}
 
 				return result;
