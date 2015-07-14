@@ -132,22 +132,18 @@ namespace redis
 			}
 
 
-		private:
+		protected:
 
 			redisReply *GetBinary(string key)
 			{
-				if (this->context)
-				{
-					auto reply = (redisReply *)redisCommand(this->context, "GET %s", key.c_str());
+				auto reply = this->InvokeCommand("GET %s", key.c_str());
 
-					if (reply)
+				if (reply)
+				{
+					if (reply->type == REDIS_REPLY_STRING)
 					{
-						if (reply->type == REDIS_REPLY_STRING)
-						{
-							return reply;
-						}
+						return reply;
 					}
-					else this->Connect();
 
 					freeReplyObject(reply);
 				}

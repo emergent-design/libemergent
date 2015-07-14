@@ -29,22 +29,16 @@ namespace redis
 
 
 			// Yes, this uses C-style ellipses, but you cannot have a virtual templated parameter
-			// pack function (the multiplexer version must be able to override this).
-			virtual Reply Command(const char *command, ...)
+			// pack function (the multiplexer version must be able to override the InvokeCommandV
+			// see below).
+			Reply Command(const char *command, ...)
 			{
-				if (this->context)
-				{
-					va_list arguments;
-					va_start(arguments, command);
-						Reply result = redisvCommand(this->context, command, arguments);
-					va_end(arguments);
+				va_list arguments;
+				va_start(arguments, command);
+					auto result = this->InvokeCommandV(command, arguments);
+				va_end(arguments);
 
-					if (!result.Ok()) this->Connect();
-
-					return result;
-				}
-
-				return nullptr;
+				return result;
 			}
 
 
@@ -137,6 +131,33 @@ namespace redis
 			// Transactions?
 
 		protected:
+
+
+			redisReply *InvokeCommand(const char *command, ...)
+			{
+				va_list arguments;
+				va_start(arguments, command);
+					auto result = this->InvokeCommandV(command, arguments);
+				va_end(arguments);
+
+				return result;
+			}
+
+
+			virtual redisReply *InvokeCommandV(const char *command, va_list &arguments)
+			{
+				if (this->context)
+				{
+					auto result = redisvCommand(this->context, command, arguments);
+
+					if (!result) this->Connect();
+
+					return (redisReply *)result;
+				}
+
+				return nullptr;
+			}
+
 
 			bool Connect()
 			{

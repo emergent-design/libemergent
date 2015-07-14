@@ -57,7 +57,26 @@ namespace redis
 			}
 
 
-			virtual Reply Command(const char *command, ...)
+		protected:
+
+			struct Expectation
+			{
+				std::mutex cs;
+				std::condition_variable condition;
+				redisReply *reply = nullptr;
+
+
+				void HandleReply(redisReply *reply)
+				{
+					this->cs.lock();
+						this->reply = reply;
+					this->cs.unlock();
+					this->condition.notify_one();
+				}
+			};
+
+
+			virtual redisReply *InvokeCommandV(const char *command, va_list &arguments)
 			{
 				int result			= REDIS_ERR;
 				auto expectation	= std::make_shared<Expectation>();
@@ -66,10 +85,7 @@ namespace redis
 				this->cs.lock();
 					if (this->context)
 					{
-						va_list arguments;
-						va_start(arguments, command);
-							result = redisvAppendCommand(this->context, command, arguments);
-						va_end(arguments);
+						result = redisvAppendCommand(this->context, command, arguments);
 
 						if (result == REDIS_OK)
 						{
@@ -93,25 +109,6 @@ namespace redis
 
 				return nullptr;
 			}
-
-
-		protected:
-
-			struct Expectation
-			{
-				std::mutex cs;
-				std::condition_variable condition;
-				redisReply *reply = nullptr;
-
-
-				void HandleReply(redisReply *reply)
-				{
-					this->cs.lock();
-						this->reply = reply;
-					this->cs.unlock();
-					this->condition.notify_one();
-				}
-			};
 
 
 			void Entry()
