@@ -33,8 +33,6 @@ namespace emergent
 				/// push the duration of its lifetime to the aggregator (in microseconds).
 				~Profile()
 				{
-					std::cout << "Destroyed" << std::endl;
-					return;
 					Aggregator::Instance().Push(this->name,
 						duration_cast<microseconds>(steady_clock::now() - this->time).count()
 					);
