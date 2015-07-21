@@ -13,7 +13,7 @@ namespace emergent
 		/// Helper macro for declaring an instance of profile. Cannot be used
 		/// more than once in the same scope due to the fixed name of the local
 		/// variable.
-		#define PROFILE(name) auto _profile = emergent::profile::Profile(name)
+		#define PROFILE(name) emergent::profile::Profile _profile(name)
 
 
 		/// Construct one of these with a unique name for a given block of code
@@ -33,6 +33,8 @@ namespace emergent
 				/// push the duration of its lifetime to the aggregator (in microseconds).
 				~Profile()
 				{
+					std::cout << "Destroyed" << std::endl;
+					return;
 					Aggregator::Instance().Push(this->name,
 						duration_cast<microseconds>(steady_clock::now() - this->time).count()
 					);
@@ -40,6 +42,9 @@ namespace emergent
 
 
 			private:
+
+				/// Avoid copying this instance as that could have strange consequences
+				Profile(const Profile &) = delete;
 
 				/// Name of this profile
 				std::string name;
