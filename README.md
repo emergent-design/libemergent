@@ -15,6 +15,7 @@ A collection of useful classes:
   * [String](https://github.com/emergent-design/libemergent/wiki#string)
   * [Type](https://github.com/emergent-design/libemergent/wiki#type)
   * [Uuid](https://github.com/emergent-design/libemergent/wiki#uuid)
+  * [Profile](https://github.com/emergent-design/libemergent/wiki#profile)
 
 
 Installation
