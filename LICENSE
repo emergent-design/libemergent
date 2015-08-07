@@ -1,6 +1,6 @@
 libemergent
 
-	Copyright (c) 2013 Emergent Design Ltd
+	Copyright (c) 2013-2015 Emergent Design Ltd
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -20,6 +20,10 @@ libemergent
 	CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-pugixml is licensed separately, refer to http://pugixml.org
+The following third-party libraries are licensed separately, please refer to their
+corresponding websites.
 
-tinyformat is licensed separately, refer to https://github.com/c42f/tinyformat
+  * pugixml - http://pugixml.org
+  * tinyformat - https://github.com/c42f/tinyformat
+  * concurrentqueue - https://github.com/cameron314/concurrentqueue
+  * catch - https://github.com/philsquared/Catch
