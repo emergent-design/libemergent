@@ -29,24 +29,16 @@ which will install the headers to ```/usr/include```.
 Dependencies
 ============
 
-We rely on [FreeImage](http://freeimage.sourceforge.net/download.html) for loading and saving images. If you
-use the image classes then please ensure that FreeImage is available on your system.
+libemergent has the following external dependencies. You must ensure that the appropriate headers and binaries
+are available on the include/lib paths if you use specific features of this library.
 
+  * [FreeImage](http://freeimage.sourceforge.net/download.html) for loading and saving images. Your application must
+  link to this if you use the Image<> class.
+  * [hiredis](https://github.com/redis/hiredis) client library. Your application must link to this if you
+  use any of the Redis classes.
 
-Linux
------
+On debian-based systems the relevant dependencies can be easily installed as follows:
 
 ```bash
-$ sudo apt-get install build-essential libfreeimage-dev
+$ sudo apt-get install build-essential libfreeimage-dev libhiredis-dev
 ```
-
-When linking your application remember to include ```-lfreeimage```.
-
-
-Windows
--------
-
-Download the [FreeImage](http://freeimage.sourceforge.net/download.html) Windows binary image.
-  * Copy the header file to the include path of your project.
-  * Copy the appropriate dll to the lib path of your project.
-  * Ensure that your project links to the library.
