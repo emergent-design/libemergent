@@ -1,3 +1,9 @@
+libemergent0 (0.0.9) unstable; urgency=medium
+
+  * Switch to a header-only library type.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Fri, 07 Aug 2015 10:07:43 +0100
+
 libemergent0 (0.0.8) unstable; urgency=medium
 
   * Implemented a thread-safe, efficient profiler.
@@ -43,13 +49,13 @@ libemergent0 (0.0.2) unstable; urgency=low
 
   * Sorted out the namespace for the reset event class
 
- -- Dan <dan@queeg>  Thu, 10 Apr 2014 14:56:58 +0100
+ -- Dan <dan@emergent-design.co.uk>  Thu, 10 Apr 2014 14:56:58 +0100
 
 libemergent0 (0.0.1) unstable; urgency=low
 
   * Addition of a reset event helper class
 
- -- Dan <dan@queeg>  Tue, 08 Apr 2014 13:41:15 +0100
+ -- Dan <dan@emergent-design.co.uk>  Tue, 08 Apr 2014 13:41:15 +0100
 
 libemergent0 (0.0.0) unstable; urgency=low
 

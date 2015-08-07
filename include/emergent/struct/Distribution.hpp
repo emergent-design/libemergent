@@ -1,7 +1,7 @@
 #pragma once
 
 #include <emergent/struct/Buffer.hpp>
-#include <emergent/Maths.h>
+#include <emergent/Maths.hpp>
 #include <vector>
 
 

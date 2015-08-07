@@ -1,7 +1,6 @@
 #pragma once
 
-// #include <emergent/Emergent.h>
-#include <emergent/Logger.h>
+#include <emergent/logger/Logger.hpp>
 #include <hiredis/hiredis.h>
 
 

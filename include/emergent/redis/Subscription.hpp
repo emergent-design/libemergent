@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emergent/Logger.h>
+#include <emergent/logger/Logger.hpp>
 #include <hiredis/adapters/libev.h>
 #include <hiredis/async.h>
 #include <algorithm>

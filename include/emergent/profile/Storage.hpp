@@ -3,7 +3,7 @@
 #include <emergent/profile/Aggregation.hpp>
 #include <emergent/redis/Redis.hpp>
 #include <emergent/String.hpp>
-#include <emergent/Path.h>
+#include <emergent/Path.hpp>
 #include <entity/json.hpp>
 #include <iostream>
 #include <map>

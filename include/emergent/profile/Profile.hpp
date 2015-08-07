@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emergent/profile/Aggregator.h>
+#include <emergent/profile/Aggregator.hpp>
 #include <chrono>
 
 

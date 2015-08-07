@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emergent/Maths.h>
+#include <emergent/Maths.hpp>
 #include <ostream>
 
 
