@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <memory>
 
 #ifdef __GNUC__
 	#include <cxxabi.h>
@@ -33,7 +34,7 @@ namespace emergent
 
 
 			/// Load a whole file into a string
-			static string load(string path)
+			static string load(const string path)
 			{
 				std::string result;
 				std::ifstream in(path, std::ios::in | std::ios::binary);
@@ -49,7 +50,7 @@ namespace emergent
 
 
 			/// Save a string to a file
-			static void save(string path, string data)
+			static void save(const string path, const string &data)
 			{
 				std::ofstream(path).write(data.data(), data.size());
 			}
@@ -84,7 +85,7 @@ namespace emergent
 
 
 			/// Generate a lowercase hyphenated string from a camel-cased one
-			static const string hyphenate(const string text)
+			static const string hyphenate(const string &text)
 			{
 				string result;
 				result.reserve(text.length());
@@ -104,10 +105,37 @@ namespace emergent
 
 
 			/// Trim a string (both ends) of the given character
-			static const string trim(const string text, const char c)
+			static const string trim(const string &text, const char c)
 			{
 				auto start = text.find_first_not_of(c);
 				return start == string::npos ? "" : text.substr(start, text.find_last_not_of(c) - start + 1);
 			}
+
+
+			template <typename ...Args> static const string format(const char *format, Args ...args)
+			{
+				// Assume an initial buffer size of 1K
+				const size_t reserve	= 1024;
+				auto result				= std::string(reserve, 0);
+				auto size				= snprintf(const_cast<char *>(result.data()), reserve, format, format_helper(args)...);
+
+				// If the buffer was not big enough then resize and format again
+				if (size >= reserve)
+				{
+					result.resize(size + 1);
+					snprintf(const_cast<char *>(result.data()), size + 1, format, format_helper(args)...);
+				}
+
+				// Remove the null at the end
+				result.resize(size);
+				return result;
+			}
+
+		private:
+
+			// For any standard type simply return the value for formatting, in the case of a string
+			// retrieve the c_str instead since snprintf does not support std::string.
+			template <typename T> static inline const T format_helper(const T &parameter)	{ return parameter; }
+			static inline const char *format_helper(const std::string &parameter)			{ return parameter.c_str(); }
 	};
 }
