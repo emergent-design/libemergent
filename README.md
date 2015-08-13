@@ -16,6 +16,7 @@ A collection of useful classes:
   * [Type](https://github.com/emergent-design/libemergent/wiki#type)
   * [Uuid](https://github.com/emergent-design/libemergent/wiki#uuid)
   * [Profile](https://github.com/emergent-design/libemergent/wiki#profile)
+  * [Clap](https://github.com/emergent-design/libemergent/wiki#clap)
 
 
 Installation
