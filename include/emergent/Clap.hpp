@@ -78,12 +78,23 @@ namespace emergent
 			// name has already been specified.
 			Option &operator [](char id)
 			{
-				if (this->options.count(id))
+				if (id == '-')
 				{
-					throw std::runtime_error(String::format("Duplicate option type: %c", id));
+					this->longOptions.emplace_back();
+					return this->longOptions.back();
 				}
 
-				return this->options[id];
+				if (std::isalnum(id))
+				{
+					if (this->options.count(id))
+					{
+						throw std::runtime_error(String::format("Duplicate option type: %c", id));
+					}
+
+					return this->options[id];
+				}
+
+				throw std::runtime_error(String::format("Invalid option type: %c", id));
 			}
 
 
@@ -91,6 +102,10 @@ namespace emergent
 			// be thrown if the position has already been specified.
 			Option &operator [](int position)
 			{
+				if (position < 1)
+				{
+					throw std::runtime_error(String::format("Invalid positional argument: %d", position));
+				}
 				if (this->positions.count(position))
 				{
 					throw std::runtime_error(String::format("Duplicate positional argument: %d", position));
@@ -104,15 +119,7 @@ namespace emergent
 			// will be returned in a vector.
 			auto Parse(int argc, char *argv[])
 			{
-				// Check that each long option name only occurs once
-				std::set<std::string> names;
-				for (auto &o : options)
-				{
-					if (!o.second.name.empty() && !names.insert(o.second.name).second)
-					{
-						throw std::runtime_error("Duplicate long option name: " + o.second.name);
-					}
-				}
+				this->SelfCheck();
 
 				std::vector<std::string> unused;
 				auto items	= Split(argc, argv);
@@ -186,6 +193,13 @@ namespace emergent
 					widest = std::max(widest, (int)entry.size() + 2);
 				}
 
+				for (auto &o : this->longOptions)
+				{
+					auto entry = String::format("      --%s%s", o.name, o.flag ? "" : "=<value>");
+					entries.emplace_back(entry, o.description);
+					widest = std::max(widest, (int)entry.size() + 2);
+				}
+
 				// Describe the options
 				for (auto &e : entries)
 				{
@@ -202,7 +216,7 @@ namespace emergent
 		private:
 
 			// Determine the console width on linux systems.
-			int ConsoleWidth()
+			static int ConsoleWidth()
 			{
 				#ifdef __linux
 					#ifdef TIOCGSIZE
@@ -222,7 +236,7 @@ namespace emergent
 
 			// Split the command-line arguments up into a list of option names and
 			// values. The bool indicates whether it is an option or a value.
-			static  const std::vector<std::pair<std::string, bool>> Split(int argc, char *argv[])
+			static const std::vector<std::pair<std::string, bool>> Split(int argc, char *argv[])
 			{
 				std::vector<std::pair<std::string, bool>> items;
 
@@ -262,6 +276,32 @@ namespace emergent
 			}
 
 
+			// Check that each long option name only occurs once
+			void SelfCheck()
+			{
+				std::set<std::string> names;
+
+				for (auto &o : this->options)
+				{
+					if (!o.second.name.empty() && !names.insert(o.second.name).second)
+					{
+						throw std::runtime_error("Duplicate long option name: " + o.second.name);
+					}
+				}
+				for (auto &o : this->longOptions)
+				{
+					if (o.name.empty())
+					{
+						throw std::runtime_error("Unnamed long option");
+					}
+					if (!names.insert(o.name).second)
+					{
+						throw std::runtime_error("Duplicate long option name: " + o.name);
+					}
+				}
+			}
+
+
 			// Parse a single option, "next" contains the next item on the command-line (if
 			// one exists).
 			void ParseOption(int &index, std::string name, std::pair<std::string, bool> *next)
@@ -281,6 +321,14 @@ namespace emergent
 						if (name == o.second.name)
 						{
 							option = &o.second;
+							break;
+						}
+					}
+					if (!option) for (auto &o : this->longOptions)
+					{
+						if (name == o.name)
+						{
+							option = &o;
 							break;
 						}
 					}
@@ -377,6 +425,7 @@ namespace emergent
 				if (std::is_integral<T>::value)				target = std::stol(value);
 			}
 
+			std::vector<Option> longOptions;
 			std::map<char, Option> options;
 			std::map<int, Option> positions;
 	};
