@@ -99,10 +99,13 @@ namespace emergent
 
 
 			// Return a positional argument to be configured. An exception will
-			// be thrown if the position has already been specified.
+			// be thrown if the position has already been specified. Positions
+			// start at 1, but a position of 0 acts as a catch all for any positions
+			// that are not defined. Therefore it is recommended that position 0 is
+			// bound to a vector<>.
 			Option &operator [](int position)
 			{
-				if (position < 1)
+				if (position < 0)
 				{
 					throw std::runtime_error(String::format("Invalid positional argument: %d", position));
 				}
@@ -115,13 +118,13 @@ namespace emergent
 			}
 
 
-			// Parse the command-line. Any unassigned positional arguments
-			// will be returned in a vector.
-			auto Parse(int argc, char *argv[])
+			// Parse the command-line. If ignoreUnknowns is set then
+			// it will not throw exceptions when dealing with unknown
+			// options.
+			void Parse(int argc, char *argv[], bool ignoreUnknowns = false)
 			{
 				this->SelfCheck();
 
-				std::vector<std::string> unused;
 				auto items	= Split(argc, argv);
 				int count	= items.size();
 				int pos		= 1;
@@ -130,15 +133,13 @@ namespace emergent
 				{
 					if (items[i].second)
 					{
-						this->ParseOption(i, items[i].first, i < count - 1 ? &items[i+1] : nullptr);
+						this->ParseOption(i, items[i].first, i < count - 1 ? &items[i+1] : nullptr, ignoreUnknowns);
 					}
 					else
 					{
-						this->ParsePosition(pos++, items[i].first, unused);
+						this->ParsePosition(pos++, items[i].first);
 					}
 				}
-
-				return unused;
 			}
 
 
@@ -157,6 +158,7 @@ namespace emergent
 				int widest	= 0;
 				int width	= consoleWidth ? consoleWidth : this->ConsoleWidth();
 				std::vector<std::pair<std::string, std::string>> entries;
+				std::string extra;
 
 				dst << "usage: " << Path(processName).filename() << " [options]";
 
@@ -167,7 +169,8 @@ namespace emergent
 						? String::format("  <arg%d>", p.first)
 						: String::format("  <%s>", p.second.name);
 
-					dst << name.substr(1);
+					if (p.first == 0)	extra = name.substr(1) + "...";
+					else				dst << name.substr(1);
 
 					if (!p.second.description.empty())
 					{
@@ -176,7 +179,7 @@ namespace emergent
 					}
 				}
 
-				dst << std::endl << std::endl;
+				dst << extra << std::endl << std::endl;
 
 				if (entries.size()) entries.emplace_back("", " ");
 
@@ -304,7 +307,7 @@ namespace emergent
 
 			// Parse a single option, "next" contains the next item on the command-line (if
 			// one exists).
-			void ParseOption(int &index, std::string name, std::pair<std::string, bool> *next)
+			void ParseOption(int &index, std::string name, std::pair<std::string, bool> *next, bool ignoreUnknowns)
 			{
 				Option *option = nullptr;
 
@@ -334,32 +337,42 @@ namespace emergent
 					}
 				}
 
-				if (!option)		throw std::runtime_error("Unknown option: " + name);
-				if (!option->set)	throw std::runtime_error("No variable bound to option: " + name);
-				if (!option->flag)
+				if (option)
 				{
-					// If this is not a flag then there must be a value to assign it.
-					if (next && !next->second)
+					if (!option->set)
 					{
-						try
-						{
-							option->set(next->first);
-							index++;
-						}
-						catch (...)
-						{
-							throw std::runtime_error("Invalid value for option: " + name);
-						}
+						throw std::runtime_error("No variable bound to option: " + name);
 					}
-					else throw std::runtime_error("Expected value for option: " + name);
+
+					if (!option->flag)
+					{
+						// If this is not a flag then there must be a value to assign it.
+						if (next && !next->second)
+						{
+							try
+							{
+								option->set(next->first);
+								index++;
+							}
+							catch (...)
+							{
+								throw std::runtime_error("Invalid value for option: " + name);
+							}
+						}
+						else throw std::runtime_error("Expected value for option: " + name);
+					}
+					else option->set("");
 				}
-				else option->set("");
+				else
+				{
+					if (!ignoreUnknowns) throw std::runtime_error("Unknown option: " + name);
+				}
 			}
 
 
-			// Parse a positional argument. Any arguments in positions that have not been defined
-			// will be added to the unused vector.
-			void ParsePosition(int pos, std::string value, std::vector<std::string> &unused)
+			// Parse a positional argument. If position 0 has been initialised then
+			// any arguments that do not match will be added to this.
+			void ParsePosition(int pos, std::string value)
 			{
 				if (this->positions.count(pos))
 				{
@@ -372,7 +385,12 @@ namespace emergent
 						throw std::runtime_error(String::format("No variable bound to position: %d", pos));
 					}
 				}
-				else unused.push_back(value);
+				else if (this->positions.count(0) && this->positions[0].set)
+				{
+					// If position 0 has been defined then act as a catch all
+					// for all unassigned positional arguments.
+					this->positions[0].set(value);
+				}
 			}
 
 
