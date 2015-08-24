@@ -48,7 +48,7 @@ namespace redis
 						buffer.Set((T *)reply->str, reply->len / sizeof(T));
 						result = true;
 					}
-					else FLOG(error, "Attempt to retrieve buffer failed at '%s', type size mismatch", key);
+					else Log::Error("Attempt to retrieve buffer failed at '%s', type size mismatch", key);
 
 					freeReplyObject(reply);
 				}
@@ -80,7 +80,7 @@ namespace redis
 						memcpy(buffer.data(), reply->str, reply->len);
 						result = true;
 					}
-					else FLOG(error, "Attempt to retrieve vector failed at '%s', type size mismatch", key);
+					else Log::Error("Attempt to retrieve vector failed at '%s', type size mismatch", key);
 
 					freeReplyObject(reply);
 				}
@@ -115,7 +115,7 @@ namespace redis
 						memcpy(image.Data(), reply->str + sizeof(ImageHeader), size);
 						result = true;
 					}
-					else FLOG(error, "Attempt to retrieve image failed at '%s', header does not match image metrics", key);
+					else Log::Error("Attempt to retrieve image failed at '%s', header does not match image metrics", key);
 				}
 
 				if (reply) freeReplyObject(reply);

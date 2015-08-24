@@ -79,8 +79,11 @@ namespace emergent
 
 				~Aggregator()
 				{
-					this->run = false;
-					this->thread.join();
+					if (this->run)
+					{
+						this->run = false;
+						this->thread.join();
+					}
 				}
 
 				void Entry()

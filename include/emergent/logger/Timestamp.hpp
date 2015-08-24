@@ -1,8 +1,7 @@
 #pragma once
 
 #include <ctime>
-#include <string>
-#include <emergent/tinyformat.h>
+#include <emergent/String.hpp>
 
 
 namespace emergent
@@ -30,7 +29,7 @@ namespace emergent
 			static const std::string Now()
 			{
 				tm t = Time();
-				return tfm::format(
+				return String::format(
 					"%04d-%02d-%02d %02d:%02d:%02d",
 					1900 + t.tm_year, 1 + t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
 				);
@@ -41,7 +40,7 @@ namespace emergent
 			static const std::string FNow()
 			{
 				tm t = Time();
-				return tfm::format(
+				return String::format(
 					"%04d-%02d-%02d_%02d%02d%02d",
 					1900 + t.tm_year, 1 + t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
 				);
@@ -52,7 +51,7 @@ namespace emergent
 			static const std::string Date()
 			{
 				tm t = Time();
-				return tfm::format(
+				return String::format(
 					"%04d-%02d-%02d",
 					1900 + t.tm_year, 1 + t.tm_mon, t.tm_mday
 				);

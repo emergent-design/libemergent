@@ -3,94 +3,177 @@
 #include <map>
 #include <vector>
 #include <memory>
-#include <emergent/tinyformat.h>
+#include <emergent/concurrentqueue.h>
 #include <emergent/logger/Sinks.hpp>
+#include <emergent/String.hpp>
 
 
 namespace emergent
 {
-	/// Log a formatted message.
-	#define FLOG(v, message, ...) LOG(v, tfm::format(message, __VA_ARGS__))
-
-	/// Log a message.
-	#ifdef __GNUC__
-		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, __PRETTY_FUNCTION__, message); }
-	#else
-		#define LOG(v, message) { if (v > logger::instance().verbosity); else logger::instance().log(v, __func__, message); }
-	#endif
-
-
-	/// The logging singleton.
-	///
-	/// A single instance of the logger is available within the process and may be used by
-	/// concurrent threads. It has support for multiple sinks each of which will be used to
-	/// log a message. It is advisable to use the LOG and FLOG macros for logging instead of
-	/// accessing the log() function directly.
-	class logger
+	class Log
 	{
 		public:
 
-			/// Retrieves the singleton instance
-			inline static logger& instance()
+			// Push a log message onto the queue with a custom severity. If the severity is less than that
+			// required by the logging verbosity then it will not be queued.
+			template <typename ...Args> static inline void Write(Severity severity, const char *message, Args ...args)
 			{
-				static logger _instance;
-				return _instance;
+				if (severity > Instance().verbosity)	return;
+				if (!Instance().run) 					return;
+
+				Instance().queue.enqueue({
+					severity, sizeof...(args) ? String::format(message, args...) : message
+				});
 			}
 
 
-			/// Add a sink to the logger (takes ownership). Each message will be logged to all sinks.
-			void add(sink::sink *sink)
+			// Helper functions for logging under various severities
+			template <typename ...Args> static inline void Debug(const char *message, Args ...args)		{ Write(Severity::Debug, message, args...); }
+			template <typename ...Args> static inline void Info(const char *message, Args ...args)		{ Write(Severity::Info, message, args...); }
+			template <typename ...Args> static inline void Warning(const char *message, Args ...args)	{ Write(Severity::Warning, message, args...); }
+			template <typename ...Args> static inline void Error(const char *message, Args ...args)		{ Write(Severity::Error, message, args...); }
+
+
+			// The logger cannot be used until it is initialised. The logger will write logs
+			// to all sinks provided (available options can be found in the Sinks.hpp file
+			// or custom sinks may be implemented). This function may only be called once and
+			// will start the logging thread.
+			static bool Initialise(std::initializer_list<std::unique_ptr<logger::Sink>> sinks)
 			{
-				this->sinks.emplace_back(sink);
+				if (!Instance().run)
+				{
+					for (auto &s : sinks)
+					{
+						// Eww, I know this is horrible but it is the only way I could find to
+						// use an initializer_list with unique_ptr<>.
+						Instance().sinks.push_back(
+							std::move(*const_cast<std::unique_ptr<logger::Sink>*>(&s))
+						);
+					}
+
+					Instance().run		= true;
+					Instance().thread	= std::thread(&Log::Entry, &Instance());
+
+					return true;
+				}
+
+				return false;
 			}
 
 
-			/// Log a message to each of the available sinks
-			void log(severity severity, std::string trace, std::string message)
+			// Return the current verbosity setting
+			static Severity Verbosity()
 			{
-				for (auto &sink : this->sinks) this->trace
-					? sink->log(severity, message + " from '" + trace + "'")
-					: sink->log(severity, message);
+				return Instance().verbosity;
 			}
 
 
-			/// Helper function to allow the verbosity to be set by string name.
-			/// Useful for setting the verbosity via command-line argument.
-			void set_verbosity(std::string verbosity = "")
+			// Set the logging verbosity
+			static void Verbosity(Severity verbosity)
 			{
-				static const std::map<std::string, severity> m = {
-					{"fatal", fatal}, {"error", error}, {"warning", warning}, {"notice", notice}, {"info", info}, {"debug", debug}
+				Instance().verbosity = verbosity;
+			}
+
+
+			// Set the logging verbosity by string name.
+			static void Verbosity(const std::string &verbosity)
+			{
+				static std::map<std::string, Severity> m = {
+					{ "fatal", Severity::Fatal },	{ "notice", Severity::Notice },
+					{ "error", Severity::Error },	{ "warning", Severity::Warning },
+					{ "info", Severity::Info },		{ "debug", Severity::Debug }
 				};
 
-				auto v = m.find(verbosity);
-				if (v != m.end()) this->verbosity = v->second;
+				if (m.count(verbosity)) Instance().verbosity = m[verbosity];
 			}
 
 
-			/// Get the current verbosity as a string or return all available verbosities.
-			const char *get_verbosity(bool all = false)
+			// Approximate backlog count for the message queue.
+			static long Backlog()
 			{
-				static const char *verbosities[] = { "fatal", "error", "warning", "notice", "info", "debug" };
-
-				return all ? "debug, info, [warning], notice, error, fatal" : verbosities[this->verbosity];
+				return Instance().queue.size_approx();
 			}
 
-
-			/// Indicate whether or not the origin of the call to LOG/FLOG (class and function)
-			/// should be included in the log entry.
-			bool trace = true;
-
-			/// The current verbosity setting
-			severity verbosity = warning;
 
 		private:
 
-			logger() {} 										///< Prevent instantiation
-			logger(logger const&) {}							///< Prevent copy construction
-			logger& operator=(logger const&) { return *this; }	///< Prevent assignment
-			~logger() {}
+			// Simple structure used for queueing logs
+			struct Item
+			{
+				Severity severity;
+				std::string message;
+			};
 
-			/// List of available sinks
-			std::vector<std::unique_ptr<sink::sink>> sinks;
+
+			// Accessor for the singleton instance
+			inline static Log &Instance()
+			{
+				static Log _instance;
+				return _instance;
+			}
+
+			// Prevent instantiation
+			Log()
+			{
+				this->run = false;
+			}
+
+			// Prevent assignment
+			Log& operator=(Log const&)
+			{
+				return *this;
+			}
+
+			// Prevent copy construction
+			Log(Log const&) {}
+
+
+			// When destroyed stop the logging thread regardless of the
+			// remaining queue size.
+			~Log()
+			{
+				if (this->run)
+				{
+					this->run = false;
+					this->thread.join();
+				}
+			}
+
+
+			// Entry point for the logging thread responsible for pulling
+			// items out of the queue and then writing them to all sinks.
+			void Entry()
+			{
+				using namespace std::chrono;
+
+				Item item;
+
+				while (this->run)
+				{
+					// Only sleep if there is nothing in the queue
+					if (this->queue.try_dequeue(item))
+					{
+						for (auto &sink : this->sinks)
+						{
+							sink->Write(item.severity, item.message);
+						}
+					}
+					else std::this_thread::sleep_for(milliseconds(10));
+				}
+			}
+
+
+			// The current verbosity setting
+			Severity verbosity = Severity::Warning;
+
+			// Sinks owned by the logger (provided during initialisation)
+			std::vector<std::unique_ptr<logger::Sink>> sinks;
+
+			// A thread-safe queue for storing messages before writing
+			moodycamel::ConcurrentQueue<Item> queue;
+
+			// Threading members
+			std::atomic<bool> run;
+			std::thread thread;
 	};
 }

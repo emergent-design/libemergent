@@ -95,7 +95,7 @@ namespace emergent
 				virtual void Store(Aggregation &aggregation)
 				{
 					String::save(
-						directory / tfm::format("profile_%s.json", aggregation.id),
+						directory / String::format("profile_%s.json", aggregation.id),
 						ent::entity::encode<ent::json>(aggregation)
 					);
 				}

@@ -15,70 +15,68 @@
 namespace emergent
 {
 	/// Available severity levels. These match some of those used by syslog.
-	enum severity
+	enum class Severity
 	{
-		fatal, error, warning, notice, info, debug
+		Fatal, Error, Warning, Notice, Info, Debug
 	};
 
 
-	namespace sink
+	namespace logger
 	{
-
-		/// Abstract sink class from which all sink implementations derive.
-		/// Each sink instance owns a critical section mutex and therefore
-		/// no single sink can be used concurrently, but different sinks can.
-		class sink
+		// The abstract base class for a logging output. A derived class must
+		// implemented the Write function. Thread safety is provided by the logger
+		// itself which means it does not need be considered at the sink level.
+		class Sink
 		{
 			public:
-				/// The main log function for the sink, it handles thread safety
-				/// so that the sink implementations do not have to.
-				void log(severity severity, std::string message)
-				{
-					std::lock_guard<std::mutex> lk(this->cs);
-					this->write(severity, message);
-				}
 
-				virtual ~sink() {}
-
+				virtual void Write(Severity severity, const std::string &message) = 0;
 
 			protected:
-				/// Helper function to return a string representation of the severity level
-				static const char *get_severity(severity severity)
+
+				static const char *ToString(Severity severity)
 				{
-					static const char *severities[] = { "FATAL", "ERROR", "WARNING", "NOTICE", "INFO", "DEBUG" };
-					return severities[severity];
+					static const char *severities[] = { "<fatal>", "<error>", "<warning>", "<notice>", "<info>", "<debug>" };
+					return severities[(int)severity];
 				}
-
-				/// The function that actually does the writing and needs to be implemented
-				/// by the concrete sinks
-				virtual void write(severity severity, std::string message) = 0;
-
-				/// Critical section mutex used to ensure that more than one process
-				/// cannot log with the same sink simultaneously
-				mutable std::mutex cs;
 		};
 
 
-
-		/// Sink implementation for logging to the console (stdout)
-		class console : public sink
+		// A sink that outputs to the console (std::cout).
+		class Console : public Sink
 		{
-			protected:
-				virtual void write(severity severity, std::string message)
+			public:
+
+				virtual void Write(Severity severity, const std::string &message)
 				{
-					std::cout << this->get_severity(severity) << ": " << message << std::endl;
+					std::cout << ToString(severity) << " " << message << std::endl;
 					std::flush(std::cout);
 				}
 		};
 
 
-
-		/// Sink implementation for logging to a file (always appends).
-		class file : public sink
+	#ifdef __linux__
+		/// Sink implementation for logging to the syslog (available on a linux system)
+		class Syslog : public Sink
 		{
 			public:
 
-				file(std::string path)
+				virtual void Write(Severity severity, const std::string &message)
+				{
+					::syslog(LOG_CRIT + (int)severity, "%s %s", ToString(severity), message.c_str());
+				}
+		};
+	#endif
+
+
+		// A sink for writing logs to a file. The calling application is responsible
+		// for ensuring that the log file can be written to the path provided and for
+		// any log rotation that may be required.
+		class LogFile : public Sink
+		{
+			public:
+
+				LogFile(std::string path)
 				{
 					this->output.exceptions(std::ofstream::failbit | std::ofstream::badbit);
 
@@ -92,40 +90,19 @@ namespace emergent
 					}
 				}
 
-				~file()
+				virtual void Write(Severity severity, const std::string &message)
 				{
-					if (this->output.is_open()) this->output.close();
-				}
-
-			protected:
-
-				virtual void write(severity severity, std::string message)
-				{
-
 					if (this->output.is_open())
 					{
-						this->output << Timestamp::Now() << " " << this->get_severity(severity) << ": " << message << std::endl;
+						this->output << Timestamp::Now() << " " << ToString(severity) << " " << message << std::endl;
 					}
 				}
 
 			private:
+
 				std::ofstream output;
 		};
-
-
-	#ifdef __linux__
-		/// Sink implementation for logging to the syslog (available on a linux system)
-		class syslog : public sink
-		{
-			protected:
-
-				virtual void write(severity severity, std::string message)
-				{
-					::syslog(LOG_CRIT + severity, "<%s> %s", this->get_severity(severity), message.c_str());
-				}
-		};
-	#endif
-
+	}
 
 		// Sink implementation for logging to redis pubsub
 		/*class redis : public sink
@@ -159,5 +136,5 @@ namespace emergent
 				std::string channel;
 				redisContext *context;
 		};*/
-	}
+	// }
 }

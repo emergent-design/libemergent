@@ -163,7 +163,7 @@ namespace redis
 			{
 				if (this->context)
 				{
-					if (this->context->err) FLOG(error, "Problem with redis connection: %s", this->context->errstr);
+					if (this->context->err) Log::Error("Problem with redis connection: %s", this->context->errstr);
 					redisFree(this->context);
 					this->context = nullptr;
 				}
@@ -179,7 +179,7 @@ namespace redis
 
 				if (this->context->err)
 				{
-					FLOG(error, "Failed to connect to redis: %s", this->context->errstr);
+					Log::Error("Failed to connect to redis: %s", this->context->errstr);
 					redisFree(this->context);
 					this->context = nullptr;
 

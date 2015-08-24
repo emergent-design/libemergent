@@ -86,7 +86,7 @@ namespace redis
 			{
 				if (this->context)
 				{
-					if (this->context->err) FLOG(error, "Problem with redis async connection: %s", this->context->errstr);
+					if (this->context->err) Log::Error("Problem with redis async connection: %s", this->context->errstr);
 					this->context	= nullptr;
 				}
 
@@ -94,7 +94,7 @@ namespace redis
 
 				if (this->context->err)
 				{
-					FLOG(error, "Failed to connect to redis async: %s", this->context->errstr);
+					Log::Error("Failed to connect to redis async: %s", this->context->errstr);
 					redisAsyncFree(this->context);
 					this->context = nullptr;
 
@@ -110,7 +110,7 @@ namespace redis
 
 				if (!result)
 				{
-					FLOG(error, "Failed to attach connection handlers to redis async: %s", this->context->errstr);
+					Log::Error("Failed to attach connection handlers to redis async: %s", this->context->errstr);
 					redisAsyncFree(this->context);
 					this->context = nullptr;
 				}

@@ -436,6 +436,12 @@ namespace emergent
 			}
 
 
+			static void Convert(std::string value, emergent::Path &target)
+			{
+				target = value;
+			}
+
+
 			// Convert value to the appropriate numeric type.
 			template <typename T> static void Convert(std::string value, T &target)
 			{

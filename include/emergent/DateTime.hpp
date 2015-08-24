@@ -1,8 +1,7 @@
 #pragma once
 
-#include <string>
 #include <ctime>
-#include <emergent/tinyformat.h>
+#include <emergent/String.hpp>
 
 
 namespace emergent
@@ -51,7 +50,7 @@ namespace emergent
 			tm t;
 			gmtime_r(&this->timestamp, &t);
 
-			return tfm::format(
+			return String::format(
 				"%04d-%02d-%02dT%02d:%02d:%02dZ",
 				1900+t.tm_year, 1+t.tm_mon, t.tm_mday,
 				t.tm_hour, t.tm_min, t.tm_sec
@@ -63,7 +62,7 @@ namespace emergent
 			tm t;
 			gmtime_r(&this->timestamp, &t);
 
-			return tfm::format(
+			return String::format(
 				"%04d-%02d-%02d",
 				1900+t.tm_year, 1+t.tm_mon, t.tm_mday
 			);
