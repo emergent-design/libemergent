@@ -8,15 +8,6 @@
 namespace emergent {
 namespace redis
 {
-	struct ImageHeader
-	{
-		byte depth;
-		byte typesize;
-		uint16_t width;
-		uint16_t height;
-	};
-
-
 	class RedisBinBag : public Redis
 	{
 		public:

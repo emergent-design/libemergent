@@ -9,6 +9,17 @@
 
 namespace emergent
 {
+	// A simple header used when storing a raw Image<> as a binary
+	// blob (for example, to file or Redis).
+	struct ImageHeader
+	{
+		byte depth;
+		byte typesize;
+		uint16_t width;
+		uint16_t height;
+	};
+
+
 	/// Base class for images of a given arithmetic type.
 	template <class T = byte> class ImageBase
 	{
@@ -281,6 +292,60 @@ namespace emergent
 			}
 
 
+			/// Load a raw image file, expects ImageHeader to be at the beginning
+			bool LoadRaw(std::string path)
+			{
+				ImageHeader h;
+				std::ifstream ifs(path, std::ios::in | std::ios::binary);
+
+				if (ifs.good())
+				{
+					int size = (int)ifs.seekg(0, std::ios::end).tellg();
+					ifs.seekg(0);
+
+					if (size > sizeof(ImageHeader))
+					{
+						ifs.read((char *)&h, sizeof(ImageHeader));
+
+						int length = h.width * h.height * h.depth * sizeof(T);
+
+						if (h.typesize == sizeof(T) && h.depth == this->depth && size == sizeof(ImageHeader) + length)
+						{
+							this->Resize(h.width, h.height);
+							ifs.read((char *)this->Data(), size);
+
+							return true;
+						}
+					}
+				}
+
+				return false;
+			}
+
+
+			/// Save a raw image file starting with ImageHeader
+			bool SaveRaw(std::string path)
+			{
+				if (this->Size())
+				{
+					std::ofstream ofs(path, std::ios::out | std::ios::binary);
+
+					if (ofs.good())
+					{
+						ImageHeader header = { this->Depth(), sizeof(T), (uint16_t)this->width, (uint16_t)this->height };
+
+						ofs.write((char *)&header, sizeof(ImageHeader));
+						ofs.write((char *)this->Data(), this->width * this->height * this->depth * sizeof(T));
+						ofs.flush();
+
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+
 			/// Calculate the distribution statistics of the image
 			/// mask can be optionally passed in; zero values in the mask tell distribution to
 			/// ignore the corresponding pixels in the image.
@@ -483,9 +548,10 @@ namespace emergent
 
 		private:
 
-			inline void SWAPBYTES(T& a, T& b) { a ^= b; b ^= a; a ^= b; }
+			inline void SWAPCHANNELS(T& a, T& b) { a ^= b; b ^= a; a ^= b; }
 
-			FIBITMAP *ToFib()
+
+			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, FIBITMAP *>::type ToFib()
 			{
 				auto *result = FreeImage_ConvertFromRawBits(this->buffer, this->width, this->height, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
@@ -500,7 +566,7 @@ namespace emergent
 						{
 							for (x=0; x<this->width; x++, data += this->depth)
 							{
-								SWAPBYTES(data[0], data[2]);
+								SWAPCHANNELS(data[0], data[2]);
 							}
 						}
 					}
@@ -510,11 +576,80 @@ namespace emergent
 			}
 
 
-			bool FromFib(FIBITMAP *image)
+			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, FIBITMAP *>::type ToFib()
+			{
+				FIBITMAP *result							= nullptr;
+				std::function<int(T *src, byte *dst)> apply	= nullptr;
+
+				if (std::is_integral<T>::value)
+				{
+					if (this->depth == 3)
+					{
+						result	= FreeImage_AllocateT(FIT_RGB16, this->width, this->height);
+						apply	= [](T *src, byte *dst) {
+							reinterpret_cast<FIRGB16 *>(dst)->red	= src[0];
+							reinterpret_cast<FIRGB16 *>(dst)->green	= src[1];
+							reinterpret_cast<FIRGB16 *>(dst)->blue	= src[2];
+							return sizeof(FIRGB16);
+						};
+					}
+					else if (this->depth == 1)
+					{
+						result	= FreeImage_AllocateT(FIT_UINT16, this->width, this->height);
+						apply	= [](T *src, byte *dst) {
+							*reinterpret_cast<ushort *>(dst) = *src;
+							return sizeof(ushort);
+						};
+					}
+				}
+				else if (std::is_floating_point<T>::value)
+				{
+					if (this->depth == 3)
+					{
+						result	= FreeImage_AllocateT(FIT_RGBF, this->width, this->height);
+						apply	= [](T *src, byte *dst) {
+							reinterpret_cast<FIRGBF *>(dst)->red	= src[0];
+							reinterpret_cast<FIRGBF *>(dst)->green	= src[1];
+							reinterpret_cast<FIRGBF *>(dst)->blue	= src[2];
+							return sizeof(FIRGBF);
+						};
+					}
+					else if (this->depth == 1)
+					{
+						result	= FreeImage_AllocateT(FIT_FLOAT, this->width, this->height);
+						apply	= [](T *src, byte *dst) {
+							*reinterpret_cast<float *>(dst) = *src;
+							return sizeof(float);
+						};
+					}
+				}
+
+				if (result)
+				{
+					int x, y;
+					T *b = this->buffer;
+
+					for (y=0; y<height; y++)
+					{
+						auto bits = FreeImage_GetScanLine(result, height - y - 1);
+
+						for (x=0; x<width; x++)
+						{
+							bits	+= apply(b, bits);
+							b		+= this->depth;
+						}
+					}
+				}
+
+				return result;
+			}
+
+
+
+			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image)
 			{
 				this->width 	= FreeImage_GetWidth(image);
 				this->height	= FreeImage_GetHeight(image);
-
 				this->buffer.Resize(this->width * this->height * this->depth);
 
 				FreeImage_ConvertToRawBits(this->buffer, image, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
@@ -524,11 +659,88 @@ namespace emergent
 					{
 						byte *end = this->buffer + this->width * this->height * this->depth;
 
-						for (byte *data = this->buffer; data < end; data += this->depth) SWAPBYTES(data[0], data[2]);
+						for (byte *data = this->buffer; data < end; data += this->depth) SWAPCHANNELS(data[0], data[2]);
 					}
 				#endif
 
 				return true;
+			}
+
+
+			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image)
+			{
+				FIBITMAP *converted							= nullptr;
+				std::function<int(byte *src, T *dst)> apply = nullptr;
+
+				this->width 	= FreeImage_GetWidth(image);
+				this->height	= FreeImage_GetHeight(image);
+				this->buffer.Resize(this->width * this->height * this->depth);
+
+				if (std::is_integral<T>::value)
+				{
+					if (this->depth == 3)
+					{
+						converted 	= FreeImage_ConvertToRGB16(image);
+						apply		= [](byte *src, T *dst) {
+							dst[0] = reinterpret_cast<FIRGB16 *>(src)->red;
+							dst[1] = reinterpret_cast<FIRGB16 *>(src)->green;
+							dst[2] = reinterpret_cast<FIRGB16 *>(src)->blue;
+							return sizeof(FIRGB16);
+						};
+					}
+					else if (this->depth == 1)
+					{
+						converted	= FreeImage_ConvertToUINT16(image);
+						apply		= [](byte *src, T *dst) {
+							*dst = *reinterpret_cast<ushort *>(src);
+							return sizeof(ushort);
+						};
+					}
+				}
+				else if (std::is_floating_point<T>::value)
+				{
+					if (this->depth == 3)
+					{
+						converted	= FreeImage_ConvertToRGBF(image);
+						apply		= [](byte *src, T *dst) {
+							dst[0] = reinterpret_cast<FIRGBF *>(src)->red;
+							dst[1] = reinterpret_cast<FIRGBF *>(src)->green;
+							dst[2] = reinterpret_cast<FIRGBF *>(src)->blue;
+							return sizeof(FIRGBF);
+						};
+					}
+					else if (this->depth == 1)
+					{
+						converted	= FreeImage_ConvertToFloat(image);
+						apply		= [](byte *src, T *dst) {
+							*dst = *reinterpret_cast<float *>(src);
+							return sizeof(float);
+						};
+					}
+				}
+
+				if (converted)
+				{
+					int x, y;
+					T *b = this->buffer;
+
+					for (y=0; y<height; y++)
+					{
+						auto bits = FreeImage_GetScanLine(converted, height - y - 1);
+
+						for (x=0; x<width; x++)
+						{
+							bits	+= apply(bits, b);
+							b		+= this->depth;
+						}
+					}
+
+					FreeImage_Unload(converted);
+
+					return true;
+				}
+
+				return false;
 			}
 	};
 }
