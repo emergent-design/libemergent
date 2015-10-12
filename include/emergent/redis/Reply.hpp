@@ -9,6 +9,7 @@ namespace redis
 {
 	using std::string;
 	using std::vector;
+	using std::map;
 
 	class Reply
 	{
@@ -105,6 +106,25 @@ namespace redis
 				vector<string> result;
 
 				for (auto &e : this->elements) result.push_back(e.AsString());
+
+				return result;
+			}
+
+
+			map<string, string> AsStringMap()
+			{
+				map<string, string> result;
+				int size = this->elements.size();
+
+				// Assumes an array of key-value pairs, therefore there must
+				// be an even number of items in the array.
+				if (size % 2 == 0)
+				{
+					for (int i=0; i<size; i+=2)
+					{
+						result[elements[i].AsString()] = elements[i+1].AsString();
+					}
+				}
 
 				return result;
 			}

@@ -102,6 +102,21 @@ namespace redis
 			bool SetRemove(string key, string member)			{ return Command("SREM %s %s", key.c_str(), member.c_str()).AsBool(); }
 			vector<string> Union(string a, string b)			{ return Command("SUNION %s %s", a.c_str(), b.c_str()).AsStringArray(); }
 
+			// Hashes
+			bool HashDelete(string key, string field)						{ return Command("HDEL %s %s", key.c_str(), field.c_str()).AsBool(); }
+			bool HashExists(string key, string field)						{ return Command("HEXISTS %s %s", key.c_str(), field.c_str()).AsBool(); }
+			string HashGet(string key, string field)						{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsString(); }
+			map<string, string> HashGetAll(string key)						{ return Command("HGETALL %s", key.c_str()).AsStringMap(); }
+			long HashIncrement(string key, string field, long amount)		{ return Command("HINCRBY %s %s %ld", key.c_str(), field.c_str(), amount).AsLong(); }
+			double HashIncrement(string key, string field, double amount)	{ return Command("HINCRBYFLOAT %s %s %g", key.c_str(), field.c_str(), amount).AsDouble(); }
+			vector<string> HashKeys(string key)								{ return Command("HKEYS %s", key.c_str()).AsStringArray(); }
+			long HashLength(string key)										{ return Command("HLEN %s", key.c_str()).AsLong(); }
+			bool HashSet(string key, string field, string value)			{ return Command("HSET %s %s %s", key.c_str(), field.c_str(), value.c_str()).AsBool(); }
+			bool HashSet(string key, string field, long value)				{ return Command("HSET %s %s %ld", key.c_str(), field.c_str(), value).AsBool(); }
+			bool HashSet(string key, string field, double value)			{ return Command("HSET %s %s %g", key.c_str(), field.c_str(), value).AsBool(); }
+			long HashStringLength(string key, string field)					{ return Command("HSTRLEN %s %s", key.c_str(), field.c_str()).AsLong(); }
+			vector<string> HashValues(string key)							{ return Command("HVALS %s", key.c_str()).AsStringArray(); }
+
 			// Sorted Sets
 			bool SortedAdd(string key, string member, double score = 0.0)						{ return Command("ZADD %s %g %s", key.c_str(), score, member.c_str()).AsBool(); }
 			long SortedCardinality(string key)													{ return Command("ZCARD %s", key.c_str()).AsLong(); }
