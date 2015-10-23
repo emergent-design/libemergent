@@ -47,10 +47,7 @@ namespace emergent
 			/// Copy constructor
 			Buffer(const Buffer<T> &buffer)
 			{
-				this->data	= nullptr;
-				this->size	= 0;
-				this->max	= 0;
-				this->Copy((Buffer<T> *)&buffer);
+				this->Copy(buffer);
 			}
 
 
@@ -75,7 +72,7 @@ namespace emergent
 			/// Assignment operator override
 			Buffer<T>& operator=(const Buffer<T> &buffer)
 			{
-				this->Copy((Buffer<T> *)&buffer);
+				this->Copy(buffer);
 				return *this;
 			}
 
@@ -149,10 +146,10 @@ namespace emergent
 					if (this->data) delete [] this->data;
 
 					this->data	= new T[size];
-					this->size	= size;
 					this->max	= size;
 				}
-				else this->size = size;
+
+				this->size = size;
 			}
 
 
@@ -210,7 +207,7 @@ namespace emergent
 			/// This is only valid for numeric types of buffer, if this function
 			/// is called on any other type of buffer it will cause a compiler
 			/// error.
-			bounds<T> Range()
+			bounds<T> Range() const
 			{
 				T min = 0, max = 0;
 
@@ -232,7 +229,7 @@ namespace emergent
 
 			/// Calculates the sum of values within the buffer. This is
 			/// only valid for numeric types of buffer.
-			double Sum()
+			double Sum() const
 			{
 				double sum = 0;
 
@@ -300,19 +297,10 @@ namespace emergent
 
 			/// Copy the supplied buffer data into this. It will
 			/// only resize the internal buffer where necessary.
-			void Copy(Buffer<T> *buffer)
+			void Copy(const Buffer<T> &buffer)
 			{
-				int size = buffer->size;
-				if (size > this->max)
-				{
-					if (this->data) delete [] this->data;
-
-					this->data	= new T[size];
-					this->max	= size;
-				}
-
-				this->size = size;
-				memcpy(this->data, buffer->Data(), size * sizeof(T));
+				this->Resize(buffer.size);
+				memcpy(this->data, buffer.data, buffer.size * sizeof(T));
 			}
 
 

@@ -4,13 +4,14 @@
 #include <emergent/image/Colours.hpp>
 #include <emergent/struct/Buffer.hpp>
 #include <emergent/struct/Distribution.hpp>
+#include <emergent/image/Operations.hpp>
 #include <FreeImage.h>
+#include <cstring>
 
 
 namespace emergent
 {
-	// A simple header used when storing a raw Image<> as a binary
-	// blob (for example, to file or Redis).
+	// A simple header used when storing a raw Image<> as a binary blob (for example, to file or Redis).
 	struct ImageHeader
 	{
 		byte depth;
@@ -26,74 +27,164 @@ namespace emergent
 		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric or boolean");
 
 		public:
-			/// Destructor
-			virtual ~ImageBase() { }
+
+			ImageBase() {}
+
+			virtual ~ImageBase() {}
+
+
+			ImageBase(byte depth = 1, int width = 0, int height = 0) : depth(depth), width(width), height(height)
+			{
+				if (!depth) throw std::runtime_error("Image depth must be greater than zero");
+
+				if (width && height) this->buffer.Resize(width * height * depth);
+			}
+
+
+			ImageBase(std::string path, byte depth = 1)
+			{
+				if (!depth) throw std::runtime_error("Image depth must be greater than zero");
+
+				this->Load(path, depth);
+			}
+
+
+			/// Copy constructor with automatic type conversion. The depth
+			/// of the source image is copied.
+			template <class U> ImageBase(const ImageBase<U> &image)
+			{
+				this->depth = image.depth;
+				this->Copy(image);
+			}
+
+
+			/// Assignment override with type conversion
+			template <class U> ImageBase<T> &operator=(const ImageBase<U> &image)
+			{
+				this->Copy(image);
+				return *this;
+			}
+
+
+			/// Assignment override which will set all pixels in the image to the given value
+			/// Can be used to clear all the pixels of an RGB image to 0,0,0 for example.
+			ImageBase<T> &operator=(const T value)
+			{
+				this->buffer = value;
+				return *this;
+			}
+
 
 			/// Operator override to support implicit and explicit typecasting
-			operator T*() { return this->buffer; }
+			operator T*() const { return this->buffer; }
 
 			/// Return the buffer data
-			T *Data() { return this->buffer; }
+			T *Data() const { return this->buffer; }
 
-			/// Return the actual buffer.
+			/// Return the actual internal buffer.
 			/// WARNING: If you modify the size of this buffer you will corrupt the owner image
-			Buffer<T> *Internal() { return &this->buffer; }
+			Buffer<T> &Internal() { return this->buffer; }
 
 			/// Return the image type ID
-			int Type() { return this->type; }
+			//int Type() { return this->type; }
 
 			/// Return the image depth (in bytes)
-			int Depth() { return this->depth; }
+			byte Depth() const { return this->depth; }
 
 			/// Return the image width
-			int Width() { return this->width; }
+			int Width() const { return this->width; }
 
 			/// Return the image height
-			int Height() { return this->height; }
+			int Height() const { return this->height; }
 
 			/// Return the image size
-			int Size() { return this->width * this->height; }
+			int Size() const { return this->width * this->height; }
 
 			/// Clear the image - sets all pixel values to 0 regardless of type
 			void Clear() { this->buffer.Clear(); }
 
 
 			/// Resizes the image buffers but destroys any existing image data.
-			void Resize(int width, int height)
+			/// A depth of 0 will keep the existing depth.
+			virtual void Resize(int width, int height, byte depth = 0)
 			{
 				if (width > 0 && height > 0)
 				{
 					this->width		= width;
 					this->height	= height;
+					this->depth		= depth ? depth : this->depth;
 					this->buffer.Resize(width * height * this->depth);
 				}
-				this->lookup.Resize(0);
 			}
 
 
 			/// Returns the maximum value in the current image data (regardless of image depth).
-			T Max()
+			T Max() const { return Operations::Max(this->buffer); }
+
+			/// Returns the minimum value in the current image data (regardless of image depth).
+			T Min() const { return Operations::Min(this->buffer); }
+
+			/// Count the number of values in the current image data (regardless of image depth)
+			/// that match the supplied predicate.
+			int Count(std::function<bool(T value)> predicate) const { return Operations::Count(this->buffer, predicate); }
+
+			/// Count the number of zero values in the current image data (regardless of image depth)
+			int ZeroCount() const { return Operations::ZeroCount(this->buffer); }
+
+			///Check if all the pixels in the image are set to the same value (regardless of image depth)
+			bool IsBlank(T reference = 0) const { return Operations::IsBlank(this->buffer, reference); }
+
+			/// Clamp the current image data (regardless of image depth) to the supplied
+			/// lower and upper limits.
+			void Clamp(T lower, T upper) { Operations::Clamp(this->buffer, lower, upper); }
+
+			/// Shift all of the values in the image data (regardless of image depth) by the
+			/// specified amount.
+			void Shift(int value) { Operations::Shift(this->buffer, value); }
+
+			/// Threshold this image at the given value
+			void Threshold(T threshold, T high = 255, T low = 0) { Operations::Threshold(this->buffer, threshold, high, low); }
+
+			/// Inverts this image
+			void Invert() { Operations::Invert(this->buffer); }
+
+
+			/// Arimetic OR of this image with a modifier image. The images should be of the
+			/// same depth, but do not have to be as long as the underlying buffer sizes are
+			/// the same. If they are not then an exception will be thrown.
+			void OR(ImageBase<T> &modifier) { Operations::OR(this->buffer, modifier.buffer); }
+
+
+			/// Arimetic AND of this image with a modifier image. The images should be of the
+			/// same depth, but do not have to be as long as the underlying buffer sizes are
+			/// the same. If they are not then an exception will be thrown.
+			void AND(ImageBase<T> &modifier) { Operations::AND(this->buffer, modifier.buffer); }
+
+
+			/// Variance normalise the image to a target variance. Each channel is normalised independently
+			/// (although it assumes only greyscale and RGB).
+			bool VarianceNormalise(double targetVariance)
 			{
-				T result 	= std::numeric_limits<T>::min();
-				T *src		= this->buffer;
-				int size	= this->buffer.Size();
+				return this->depth == 3
+					? Operations::VarianceNormalise<3>(this->buffer, targetVariance)
+					: Operations::VarianceNormalise<1>(this->buffer, targetVariance);
+			}
 
-				for (int i=0; i<size; i++, src++) if (*src > result) result = *src;
-
-				return result;
+			/// Normalise the image data. Each channel is normalised independently (although it assumes only
+			/// greyscale and RGB).
+			bool Normalise()
+			{
+				return this->depth == 3
+					? Operations::Normalise<3>(this->buffer)
+					: Operations::Normalise<1>(this->buffer);
 			}
 
 
-			/// Returns the minimum value in the current image data (regardless of image depth).
-			T Min()
+			/// Calculate the distribution statistics of the image mask can be optionally passed in;
+			/// zero values in the mask tell distribution to ignore the corresponding pixels in the image.
+			distribution Stats(Buffer<byte> *mask = nullptr) const
 			{
-				T result 	= std::numeric_limits<T>::max();
-				T *src		= this->buffer;
-				int size	= this->buffer.Size();
-
-				for (int i=0; i<size; i++, src++) if (*src < result) result = *src;
-
-				return result;
+				return distribution(this->buffer, mask);
 			}
 
 
@@ -115,63 +206,133 @@ namespace emergent
 			}
 
 
-			/// Count the number of values in the current image data (regardless of image depth)
-			/// that match the supplied predicate.
-			int Count(std::function<bool(T value)> predicate)
+			/// Add the values from another image to this one at the given offset
+			/// Any values that drop off the edges are ignored. If replace is true,
+			/// the image is inserted rather than summed into the destination.
+			ImageBase<T> &Insert(const ImageBase<T> &image, int x, int y, bool sum = false)
 			{
-				int result	= 0;
-				int size	= this->buffer.Size();
-				T *src		= this->buffer;
+				if (image.depth == this->depth && x >= 0 && x < this->width && y >= 0 && y < this->height)
+				{
+					int i, j, k;
+					int depth	= this->depth;
+					int ls		= this->width * depth;
+					int li		= image.Width() * depth;
+					int w 		= std::min(image.Width(), this->width - x);
+					int h 		= std::min(image.Height(), this->height - y);
+					T *ps 		= this->buffer + y * ls + x * depth;
+					T *pi 		= image;
 
-				for (int i=0; i<size; i++) if (predicate(*src++)) result++;
+					if (sum)
+					{
+						int js = ls - w * depth;
+						int ji = li - w * depth;
+
+						for (j=0; j<h; j++, pi+=ji, ps+=js)
+						{
+							for (i=0; i<w; i++)
+							{
+								for (k=0; k<depth; k++) *ps++ += *pi++;
+							}
+						}
+					}
+					else
+					{
+						int line = w * depth * sizeof(T);
+
+						for (j=0; j<h; j++, pi+=li, ps+=ls)
+						{
+							memcpy(ps, pi, line);
+						}
+					}
+				}
+
+				return *this;
+			}
+
+
+			/// Gets the value of a pixel for a specific channel but supports values outside the image dimensions,
+			/// if mirror is true the pixel values are mirrored, otherwise they are smeared. Weird things will happen
+			/// if a value that is twice the width/height outside the image is requested.
+			T Value(int x, int y, byte channel = 0, bool mirror = true) const
+			{
+				if (channel < this->depth)
+				{
+					int ax 		= x < 0 ? (mirror ? -x : 0) : x < this->width  ? x : (mirror ? this->width + this->width - x - 2 : this->width - 1);
+					int ay 		= y < 0 ? (mirror ? -y : 0) : y < this->height ? y : (mirror ? this->height + this->height - y - 2 : this->height - 1);
+					int line	= this->width * this->depth;
+
+					return *(this->buffer + ay * line + ax * this->depth + channel);
+				}
+
+				return 0;
+			}
+
+
+			/// Interpolate the pixel value of a specific channel at the given coordinates.
+			T Interpolate(double x, double y, byte channel = 0) const
+			{
+				if (x >= 0 && x < this->width - 1 && y >= 0 && y < this->height - 1 && channel < this->depth)
+				{
+					int line		= this->width * this->depth;
+					double sx		= x - (int)x;
+					double sy		= y - (int)y;
+					T *pb			= this->buffer + (int)y * line + (int)x * this->depth + channel;
+					double result	= (double)*pb * (1 - sx) * (1 - sy)
+						+ (double)*(pb + this->depth) * sx * (1 - sy)
+						+ (double)*(pb + line) * (1 - sx) * sy
+						+ (double)*(pb + line + this->depth) * sx * sy;
+
+					return std::is_integral<T>::value ? lrint(result) : result;
+				}
+
+				return 0;
+			}
+
+
+			/// Interpolate the pixel value of all channels at the given coordinates. The size
+			/// N must match the depth of this image and the coordinates must be valid otherwise
+			/// zeroes will be returned.
+			template <byte N> std::array<T, N> InterpolateAll(double x, double y) const
+			{
+				std::array<T, N> result = {};
+
+				if (N == this->depth && x >= 0 && x < this->width - 1 && y >= 0 && y < this->height - 1)
+				{
+					int line	= this->width * N;
+					double sx	= x - (int)x;
+					double sy	= y - (int)y;
+					double a	= (1 - sx) * (1 - sy);
+					double b	= sx * (1 - sy);
+					double c	= (1 - sx) * sy;
+					double d	= sx * sy;
+					T *pb		= this->buffer + (int)y * line + (int)x * N;
+
+					if (std::is_integral<T>::value)
+					{
+						for (int i=0; i<N; i++, pb++)
+						{
+							result[i] = lrint(a * *pb + b * pb[N]+ c * pb[line] + d * pb[line + N]);
+						}
+					}
+					else
+					{
+						for (int i=0; i<N; i++, pb++)
+						{
+							result[i] = a * *pb + b * pb[N]+ c * pb[line] + d * pb[line + N];
+						}
+					}
+				}
 
 				return result;
 			}
 
 
-			/// Count the number of zero values in the current image data (regardless of image depth)
-			int ZeroCount()
-			{
-				int result	= 0;
-				int size	= this->buffer.Size();
-				T *src		= this->buffer;
 
-				for (int i=0; i<size; i++) if (!*src++) result++;
-
-				return result;
-			}
-
-			///Check if all the pixels in the image are set to the same value (regardless of image depth)
-			bool IsBlank(T reference = 0)
-			{
-				T* src 		= this->buffer;
-				int size 	= this->buffer.Size();
-				for (int i = 0; i < size; i++)
-				{
-					if(*src++ != reference) return false;
-				}
-				return true;
-			}
-
-
-			/// Clamp the current image data (regardless of image depth) to the supplied
-			/// lower (black) and upper (white) limits.
-			void Clamp(T black, T white)
-			{
-				T *src 		= this->buffer;
-				int size	= this->width * this->height * this->depth;
-
-				for(int i = 0; i< size; i++, src++)
-				{
-					*src = *src < black ? black : (*src > white ? white : *src);
-				}
-			}
-
-
-			/// Load an image from file. Uses the freeimage library to attempt loading
-			/// and conversion of the image. It should cope with any standard image
-			/// formats.
-			bool Load(std::string path)
+			/// Load an image from file. Uses the freeimage library to attempt loading and conversion
+			/// of the image. It should cope with any standard image formats. If depth is 0 then the
+			/// depth of this image will be left as it is, otherwise it will attempt to convert to the
+			/// required depth where necessary.
+			virtual bool Load(std::string path, byte depth = 0)
 			{
 				bool result = false;
 				auto fif	= FreeImage_GetFileType(path.c_str(), 0);
@@ -184,7 +345,7 @@ namespace emergent
 
 					if (image)
 					{
-						result = this->FromFib(image);
+						result = this->FromFib(image, depth);
 						FreeImage_Unload(image);
 					}
 				}
@@ -193,8 +354,9 @@ namespace emergent
 			}
 
 
-			/// Load an image from memory buffer
-			bool Load(Buffer<byte> &buffer)
+			/// Load an image from memory buffer. If depth is 0 then the depth of this image will be left
+			/// as it is, otherwise it will attempt to convert to the required depth where necessary.
+			virtual bool Load(Buffer<byte> &buffer, byte depth = 0)
 			{
 				bool result	= false;
 				auto *mem 	= FreeImage_OpenMemory(buffer.Data(), buffer.Size());
@@ -209,7 +371,7 @@ namespace emergent
 
 						if (image)
 						{
-							result = this->FromFib(image);
+							result = this->FromFib(image, depth);
 							FreeImage_Unload(image);
 						}
 					}
@@ -218,6 +380,13 @@ namespace emergent
 				}
 
 				return result;
+			}
+
+
+			/// Load a raw image file, expects ImageHeader to be at the beginning
+			virtual bool LoadRaw(std::string path)
+			{
+				return this->LoadRaw(path, false);
 			}
 
 
@@ -292,37 +461,6 @@ namespace emergent
 			}
 
 
-			/// Load a raw image file, expects ImageHeader to be at the beginning
-			bool LoadRaw(std::string path)
-			{
-				ImageHeader h;
-				std::ifstream ifs(path, std::ios::in | std::ios::binary);
-
-				if (ifs.good())
-				{
-					int size = (int)ifs.seekg(0, std::ios::end).tellg();
-					ifs.seekg(0);
-
-					if (size > sizeof(ImageHeader))
-					{
-						ifs.read((char *)&h, sizeof(ImageHeader));
-
-						int length = h.width * h.height * h.depth * sizeof(T);
-
-						if (h.typesize == sizeof(T) && h.depth == this->depth && size == sizeof(ImageHeader) + length)
-						{
-							this->Resize(h.width, h.height);
-							ifs.read((char *)this->Data(), size);
-
-							return true;
-						}
-					}
-				}
-
-				return false;
-			}
-
-
 			/// Save a raw image file starting with ImageHeader
 			bool SaveRaw(std::string path)
 			{
@@ -332,7 +470,7 @@ namespace emergent
 
 					if (ofs.good())
 					{
-						ImageHeader header = { this->Depth(), sizeof(T), (uint16_t)this->width, (uint16_t)this->height };
+						ImageHeader header = { this->depth, sizeof(T), (uint16_t)this->width, (uint16_t)this->height };
 
 						ofs.write((char *)&header, sizeof(ImageHeader));
 						ofs.write((char *)this->Data(), this->width * this->height * this->depth * sizeof(T));
@@ -346,209 +484,20 @@ namespace emergent
 			}
 
 
-			/// Calculate the distribution statistics of the image
-			/// mask can be optionally passed in; zero values in the mask tell distribution to
-			/// ignore the corresponding pixels in the image.
-			distribution Stats(Buffer<byte> *mask = nullptr)
-			{
-				return distribution(this->buffer, mask);
-			}
-
-
-			/// Threshold this image at the given value (each channel is thresholded independently)
-			void Threshold(T value, bool above = true)
-			{
-				int size	= this->width * this->height * this->depth;
-				T *src		= this->buffer;
-
-				if (above)	for (int i=0; i<size; i++, src++) 	*src = (*src < value) ? 0 : 255;
-				else		for (int i=0; i<size; i++, src++)	*src = (*src > value) ? 0 : 255;
-			}
-
-
-			/// Shift all of the values in the image data (regardless of image depth) by the
-			/// specified amount.
-			void Shift(int value)
-			{
-				int size	= this->width * this->height * this->depth;
-				T *src		= this->buffer;
-
-				for (int i=0; i<size; i++, src++) *src = Maths::clamp<T>(*src + value);
-			}
-
-
-			/// Gets the value of a pixel for a specific channel but supports values outside the image dimensions,
-			/// if mirror is true the pixel values are mirrored, otherwise they are smeared. Weird things will happen
-			/// if a value that is twice the width/height outside the image is requested.
-			T Value(int x, int y, byte channel = 0, bool mirror = true)
-			{
-				if (channel < this->depth)
-				{
-					int ax 		= x < 0 ? (mirror ? -x : 0) : x < this->width  ? x : (mirror ? this->width + this->width - x - 2 : this->width - 1);
-					int ay 		= y < 0 ? (mirror ? -y : 0) : y < this->height ? y : (mirror ? this->height + this->height - y - 2 : this->height - 1);
-					int line	= this->width * this->depth;
-
-					return *(this->buffer + ay * line + ax * this->depth + channel);
-				}
-
-				return 0;
-			}
-
-
-			/// Interpolate the pixel value of a specific channel at the given coordinates.
-			T Interpolate(double x, double y, byte channel = 0)
-			{
-				if (x >= 0 && x < this->width - 1 && y >= 0 && y < this->height - 1 && channel < this->depth)
-				{
-					int line	= this->width * this->depth;
-					double sx	= x - (int)x;
-					double sy	= y - (int)y;
-					T *pb		= this->buffer + (int)y * line + (int)x * this->depth + channel;
-
-					return lrint(
-						(double)*pb * (1 - sx) * (1 - sy) +
-						(double)*(pb + this->depth) * sx * (1 - sy) +
-						(double)*(pb + line) * (1 - sx) * sy +
-						(double)*(pb + line + this->depth) * sx * sy
-					);
-				}
-
-				return 0;
-			}
-
-
-			/// Variance normalise the image to a target variance.
-			/// Each channel is normalised independently.
-			bool VarianceNormalise(double targetVariance)
-			{
-				int size = this->Size();
-
-				if (size)
-				{
-					T *b;
-					int i, j;
-					double mean, variance;
-					double sum[Depth::max] = {}, squared[Depth::max] = {}, scale[Depth::max], shift[Depth::max];
-
-					for (i=0, b=buffer; i<size; i++)
-					{
-						for (j=0; j<this->depth; j++)
-						{
-							squared[j]	+= *b * *b;
-							sum[j]		+= *b++;
-						}
-					}
-
-					for (i=0; i<this->depth; i++)
-					{
-						mean		= sum[i] / (double)size;
-						variance	= (squared[i] / (double)size) - mean * mean;
-						scale[i]	= sqrt(targetVariance / variance);
-						shift[i]	= 128 - (mean * scale[i]);
-					}
-
-					for (i=0, b=buffer; i<size; i++)
-					{
-						for (j=0; j<this->depth; j++, b++)
-						{
-							*b = Maths::clamp<T>(lrint((double)*b * scale[j] + shift[j]));
-						}
-					}
-
-					return true;
-				}
-
-				return false;
-			}
-
-
-			/// Normalise the image data. Each channel is normalised
-			/// independently.
-			bool Normalise()
-			{
-				int size = this->Size();
-
-				if (size)
-				{
-					T *b;
-					int i, j;
-					double scale[Depth::max];
-					T low[Depth::max], high[Depth::max];
-
-					std::fill_n(low, Depth::max, std::numeric_limits<T>::max());
-					std::fill_n(high, Depth::max, std::numeric_limits<T>::min());
-
-					for (i=0, b=buffer; i<size; i++)
-					{
-						for (j=0; j<this->depth; j++)
-						{
-							low[j]	= std::min(low[j], *b);
-							high[j]	= std::max(high[j], *b++);
-						}
-					}
-
-					for (i=0; i<this->depth; i++)
-					{
-						scale[i] = 255.0 / std::max(1.0, (double)(high[i] - low[i]));
-					}
-
-					for (i=0, b=buffer; i<size; i++)
-					{
-						for (j=0; j<this->depth; j++, b++)
-						{
-							*b = lrint(scale[j] * (*b - low[j]));
-						}
-					}
-
-					return true;
-				}
-
-				return false;
-			}
-
-
-			/// Generate a row lookup table
-			T **Lookup()
-			{
-				if (this->lookup.Size() != this->height)
-				{
-					this->lookup.Resize(this->height);
-					int line	= this->width * this->depth;
-					T *pb		= this->buffer;
-					T **pl		= this->lookup;
-
-					for (int y=0; y<this->height; y++, pb+=line, pl++) *pl = pb;
-				}
-
-				return this->lookup;
-			}
-
-
 		protected:
-			ImageBase(int type, int depth, int width = 0, int height = 0)
-				: type(type), depth(depth), width(width), height(height), buffer(width * height * depth), lookup() {}
-
-			/// Image type
-			int type;
 
 			/// Image depth
-			int depth;
+			byte depth = 1;
 
 			/// Image width
-			int width;
+			int width = 0;
 
 			/// Image height
-			int height;
+			int height = 0;
 
 			/// Buffer for the actual image data
 			Buffer<T> buffer;
 
-			/// Lookup table for rows
-			Buffer<T*> lookup;
-
-		private:
-
-			inline void SWAPCHANNELS(T& a, T& b) { a ^= b; b ^= a; a ^= b; }
 
 
 			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, FIBITMAP *>::type ToFib()
@@ -556,7 +505,7 @@ namespace emergent
 				auto *result = FreeImage_ConvertFromRawBits(this->buffer, this->width, this->height, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
 				#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
-					if (result && this->depth > 1)
+					if (result && this->depth == 3)
 					{
 						int x, y;
 						byte *data	= FreeImage_GetBits(result);
@@ -566,7 +515,7 @@ namespace emergent
 						{
 							for (x=0; x<this->width; x++, data += this->depth)
 							{
-								SWAPCHANNELS(data[0], data[2]);
+								std::swap(data[0], data[2]);
 							}
 						}
 					}
@@ -646,20 +595,24 @@ namespace emergent
 
 
 
-			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image)
+			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image, byte depth)
 			{
 				this->width 	= FreeImage_GetWidth(image);
 				this->height	= FreeImage_GetHeight(image);
+				this->depth		= depth ? depth : this->depth;
 				this->buffer.Resize(this->width * this->height * this->depth);
 
 				FreeImage_ConvertToRawBits(this->buffer, image, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
 				#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
-					if (this->depth > 1)
+					if (this->depth == 3)
 					{
 						byte *end = this->buffer + this->width * this->height * this->depth;
 
-						for (byte *data = this->buffer; data < end; data += this->depth) SWAPCHANNELS(data[0], data[2]);
+						for (byte *data = this->buffer; data < end; data += this->depth)
+						{
+							std::swap(data[0], data[2]);
+						}
 					}
 				#endif
 
@@ -667,13 +620,14 @@ namespace emergent
 			}
 
 
-			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image)
+			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image, byte depth)
 			{
 				FIBITMAP *converted							= nullptr;
 				std::function<int(byte *src, T *dst)> apply = nullptr;
 
 				this->width 	= FreeImage_GetWidth(image);
 				this->height	= FreeImage_GetHeight(image);
+				this->depth		= depth ? depth : this->depth;
 				this->buffer.Resize(this->width * this->height * this->depth);
 
 				if (std::is_integral<T>::value)
@@ -742,5 +696,126 @@ namespace emergent
 
 				return false;
 			}
+
+
+			/// A copy function that also attempts to do type conversion. For example, when going from an RGB int
+			/// image to a greyscale byte image it will first convert from int to byte by normalising the values
+			/// and scaling to byte (if necessary). Then it will convert from RGB to greyscale. If the source image
+			/// is the same type as this then it should be pretty fast since it is a simple buffer copy instead.
+			template <class U> void Copy(const ImageBase<U> &image)
+			{
+				const T max		= std::numeric_limits<T>::max();
+				this->width		= image.width;
+				this->height	= image.height;
+				int size		= this->width * this->height;
+				auto r			= image.buffer.Range();
+
+				this->buffer.Resize(size * this->depth);
+
+				U *src = image;
+				T *dst = this->buffer;
+
+				std::function<T(U value)> apply = nullptr;
+				if (r.range > max)	apply = [&](U value) { return (T)lrint(max * r.normalise(value)); };
+				else				apply = [&](U value) { return (T)(value - r.min); };
+
+				if (this->depth == image.depth)
+				{
+					size *= this->depth;
+					for (int i=0; i<size; i++)
+					{
+						*dst++ = apply(*src++);
+					}
+				}
+				else if (this->depth == 1 && image.depth == 3)
+				{
+					for (int i=0; i<size; i++, src+=3)
+					{
+						*dst++ = (apply(src[0]) + apply(src[1]) + apply(src[2])) / 3;
+					}
+				}
+				else if (this->depth == 3 && image.depth == 1)
+				{
+					T value;
+					for (int i=0; i<size; i++)
+					{
+						value = apply(*src++);
+						*dst++ = value;
+						*dst++ = value;
+						*dst++ = value;
+					}
+
+				}
+			}
+
+
+			/// If the image to be copied is of the same type and depth as this one then simply copy the buffer, otherwise
+			/// convert appropriately (supports grey to RGB and vice versa).
+			void Copy(const ImageBase<T> &image)
+			{
+				this->width		= image.width;
+				this->height	= image.height;
+
+				if (this->depth != image.depth)
+				{
+					int size = this->width * this->height;
+					this->buffer.Resize(size * this->depth);
+
+					T *src = image;
+					T *dst = this->buffer;
+
+					if (this->depth == 1 && image.depth == 3)
+					{
+						for (int i=0; i<size; i++, src+=3) { *dst++ = (src[0] + src[1] + src[2]) / 3; }
+					}
+					else if (this->depth == 3 && image.depth == 1)
+					{
+						for (int i=0; i<size; i++, src++) { *dst++ = *src; *dst++ = *src; *dst++ = *src; }
+					}
+
+				}
+				else this->buffer = image.buffer;
+			}
+
+			/// Load a raw image file, expects ImageHeader to be at the beginning
+			bool LoadRaw(std::string path, bool checkDepth)
+			{
+				ImageHeader h;
+				std::ifstream ifs(path, std::ios::in | std::ios::binary);
+
+				if (ifs.good())
+				{
+					int size = (int)ifs.seekg(0, std::ios::end).tellg();
+					ifs.seekg(0);
+
+					if (size > sizeof(ImageHeader))
+					{
+						ifs.read((char *)&h, sizeof(ImageHeader));
+
+						if (checkDepth && h.depth != this->depth)
+						{
+							throw std::runtime_error(
+								"Attempting to load an Image<> from raw as a different depth, "
+								"if this is intentional please consider using an ImageBase<> instead"
+							);
+						}
+
+						int length = h.width * h.height * h.depth * sizeof(T);
+
+						if (h.typesize == sizeof(T) && size == sizeof(ImageHeader) + length)
+						{
+							this->Resize(h.width, h.height, h.depth);
+							ifs.read((char *)this->Data(), size);
+
+							return true;
+						}
+					}
+				}
+			}
+
+
+			/// Allows the private members of this class
+			/// to be accessed by other template variants
+			template<class U> friend class ImageBase;
 	};
 }
