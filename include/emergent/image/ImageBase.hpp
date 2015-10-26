@@ -28,10 +28,6 @@ namespace emergent
 
 		public:
 
-			ImageBase() {}
-
-			virtual ~ImageBase() {}
-
 
 			ImageBase(byte depth = 1, int width = 0, int height = 0) : depth(depth), width(width), height(height)
 			{
@@ -48,6 +44,7 @@ namespace emergent
 				this->Load(path, depth);
 			}
 
+			virtual ~ImageBase() {}
 
 			/// Copy constructor with automatic type conversion. The depth
 			/// of the source image is copied.
