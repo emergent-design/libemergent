@@ -106,6 +106,8 @@ namespace redis
 			bool HashDelete(string key, string field)						{ return Command("HDEL %s %s", key.c_str(), field.c_str()).AsBool(); }
 			bool HashExists(string key, string field)						{ return Command("HEXISTS %s %s", key.c_str(), field.c_str()).AsBool(); }
 			string HashGet(string key, string field)						{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsString(); }
+			long HashGet(string key, string field, long defaultValue)		{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsLong(defaultValue); }
+			double HashGet(string key, string field, double defaultValue)	{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsDouble(defaultValue); }
 			map<string, string> HashGetAll(string key)						{ return Command("HGETALL %s", key.c_str()).AsStringMap(); }
 			long HashIncrement(string key, string field, long amount)		{ return Command("HINCRBY %s %s %ld", key.c_str(), field.c_str(), amount).AsLong(); }
 			double HashIncrement(string key, string field, double amount)	{ return Command("HINCRBYFLOAT %s %s %g", key.c_str(), field.c_str(), amount).AsDouble(); }

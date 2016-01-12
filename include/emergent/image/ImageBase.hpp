@@ -8,6 +8,7 @@
 #include <FreeImage.h>
 #include <cstring>
 
+#include <iostream>
 
 namespace emergent
 {
@@ -44,7 +45,14 @@ namespace emergent
 				this->Load(path, depth);
 			}
 
-			virtual ~ImageBase() {}
+
+			//The depth of the source image is copied.
+			ImageBase(const ImageBase<T> &image)
+			{
+				this->depth = image.depth;
+				this->Copy(image);
+			}
+
 
 			/// Copy constructor with automatic type conversion. The depth
 			/// of the source image is copied.
@@ -55,7 +63,19 @@ namespace emergent
 			}
 
 
-			/// Assignment override with type conversion
+			virtual ~ImageBase() {}
+
+
+			//The depth of this image is retained.
+			ImageBase<T> &operator=(const ImageBase<T> &image)
+			{
+				this->Copy(image);
+				return *this;
+			}
+
+
+			/// Assignment override with type conversion. The depth of this
+			/// image is retained.
 			template <class U> ImageBase<T> &operator=(const ImageBase<U> &image)
 			{
 				this->Copy(image);
@@ -481,6 +501,10 @@ namespace emergent
 			}
 
 
+			auto begin()	{ return this->buffer.begin(); }
+			auto end()		{ return this->buffer.end(); }
+
+
 		protected:
 
 			/// Image depth
@@ -808,6 +832,8 @@ namespace emergent
 						}
 					}
 				}
+
+				return false;
 			}
 
 

@@ -12,5 +12,6 @@ solution "emergent"
 		kind				"ConsoleApp"
 		targetdir			"bin"
 		targetname			"test"
+		links				"freeimage"
 		files				{ "src/test/**.cpp" }
 		postbuildcommands	{ "./bin/test" }

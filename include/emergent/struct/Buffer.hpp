@@ -156,12 +156,11 @@ namespace emergent
 			/// Reduce the actual memory footprint of the buffer to the current size.
 			void Compress()
 			{
-				if (this->max > size && size > 0)
+				if (this->max > this->size && this->size > 0)
 				{
 					T *temp		= this->data;
-					this->data	= new T[size];
-					this->size	= size;
-					this->max	= size;
+					this->data	= new T[this->size];
+					this->max	= this->size;
 
 					memcpy(this->data, temp, this->size * sizeof(T));
 					delete [] temp;
@@ -291,6 +290,24 @@ namespace emergent
 
 				return false;
 			}
+
+
+			/// Basic iterator implementation to support range-based for loops.
+			struct iterator : std::iterator<std::input_iterator_tag, T>
+			{
+				iterator(T *position) : position(position) {}
+
+				iterator operator++(int)			{ return this->position++; }
+				iterator &operator++()				{ this->position++;	return *this; }
+				bool operator!=(const iterator &i)	{ return i.position != this->position; }
+				bool operator==(const iterator &i)	{ return i.position == this->position; }
+				T &operator*()						{ return *this->position; }
+
+				private: T *position = nullptr;
+			};
+
+			iterator begin() const	{ return iterator(this->data); }
+			iterator end() const	{ return iterator(this->data + this->size); }
 
 
 		private:

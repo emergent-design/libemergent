@@ -14,14 +14,8 @@ namespace emergent
 			/// Returns the maximum value in the data.
 			template <typename T> static T Max(const Buffer<T> &data)
 			{
-				T result 	= std::numeric_limits<T>::min();
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++, src++)
-				{
-					if (*src > result) result = *src;
-				}
+				T result = std::numeric_limits<T>::min();
+				for (auto &d : data) if (d > result) result = d;
 
 				return result;
 			}
@@ -30,11 +24,8 @@ namespace emergent
 			/// Returns the minimum value in the data.
 			template <typename T> static T Min(const Buffer<T> &data)
 			{
-				T result 	= std::numeric_limits<T>::max();
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++, src++) if (*src < result) result = *src;
+				T result = std::numeric_limits<T>::max();
+				for (auto &d : data) if (d < result) result = d;
 
 				return result;
 			}
@@ -43,11 +34,8 @@ namespace emergent
 			/// Count the number of values in the data that match the supplied predicate.
 			template <typename T> static int Count(const Buffer<T> &data, std::function<bool(T value)> predicate)
 			{
-				int result	= 0;
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++) if (predicate(*src++)) result++;
+				int result = 0;
+				for (auto &d : data) if (predicate(d)) result++;
 
 				return result;
 			}
@@ -55,11 +43,8 @@ namespace emergent
 			/// Count the number of zero values in the data
 			template <typename T> static int ZeroCount(const Buffer<T> &data)
 			{
-				int result	= 0;
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++) if (!*src++) result++;
+				int result = 0;
+				for (auto &d : data) if (!d) result++;
 
 				return result;
 			}
@@ -67,12 +52,8 @@ namespace emergent
 
 			template <typename T> static bool IsBlank(const Buffer<T> &data, T reference = 0)
 			{
-				T* src 		= data;
-				int size 	= data.Size();
-				for (int i = 0; i < size; i++)
-				{
-					if(*src++ != reference) return false;
-				}
+				for (auto &d : data) if (d != reference) return false;
+
 				return true;
 			}
 
@@ -80,13 +61,7 @@ namespace emergent
 			/// Clamp the data to the supplied lower and upper limits.
 			template <typename T> static void Clamp(Buffer<T> &data, T lower, T upper)
 			{
-				T *src 		= data;
-				int size	= data.Size();
-
-				for(int i = 0; i< size; i++, src++)
-				{
-					*src = *src < lower ? lower : (*src > upper ? upper : *src);
-				}
+				for (auto &d : data) d = d < lower ? lower : (d > upper ? upper : d);
 			}
 
 
@@ -94,30 +69,21 @@ namespace emergent
 			/// "high" else it will be set to "low".
 			template <typename T> static void Threshold(Buffer<T> &data, T threshold, T high = 255, T low = 0)
 			{
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++, src++) *src = (*src < threshold) ? low : high;
+				for (auto &d : data) d = d < threshold ? low : high;
 			}
 
 
 			/// Shift all of the values in the data by the specified amount.
 			template <typename T> static void Shift(Buffer<T> &data, int value)
 			{
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++, src++) *src = Maths::clamp<T>(*src + value);
+				for (auto &d : data) d = Maths::clamp<T>(d + value);
 			}
 
 
 			/// Data inversion
 			template <typename T> static void Invert(Buffer<T> &data)
 			{
-				int size	= data.Size();
-				T *src		= data;
-
-				for (int i=0; i<size; i++, src++) *src = ~*src;
+				for (auto &d : data) d = ~d;
 			}
 
 
