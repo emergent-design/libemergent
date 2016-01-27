@@ -57,7 +57,7 @@ namespace emergent
 
 			/// Print all registered types derived from T
 			/// If multiline is true, each type name is printed on its own line, otherwise
-			/// they are printed on a single light with space separation.
+			/// they are printed on a single line with space separation.
 			static void Print(bool multiline = true)
 			{
 				if (!multiline)
@@ -71,7 +71,7 @@ namespace emergent
 
 		private:
 
-			/// Only the master instance is allow to be constructed this way
+			/// Only the master instance is allowed to be constructed this way
 			Type() {}
 
 

@@ -567,8 +567,8 @@ namespace emergent
 					{
 						result	= FreeImage_AllocateT(FIT_UINT16, this->width, this->height);
 						apply	= [](T *src, byte *dst) {
-							*reinterpret_cast<ushort *>(dst) = *src;
-							return sizeof(ushort);
+							*reinterpret_cast<uint16_t *>(dst) = *src;
+							return sizeof(uint16_t);
 						};
 					}
 				}
@@ -667,8 +667,8 @@ namespace emergent
 					{
 						converted	= FreeImage_ConvertToUINT16(image);
 						apply		= [](byte *src, T *dst) {
-							*dst = *reinterpret_cast<ushort *>(src);
-							return sizeof(ushort);
+							*dst = *reinterpret_cast<uint16_t *>(src);
+							return sizeof(uint16_t);
 						};
 					}
 				}

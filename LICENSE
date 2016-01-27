@@ -24,6 +24,5 @@ The following third-party libraries are licensed separately, please refer to the
 corresponding websites.
 
   * pugixml - http://pugixml.org
-  * tinyformat - https://github.com/c42f/tinyformat
   * concurrentqueue - https://github.com/cameron314/concurrentqueue
   * catch - https://github.com/philsquared/Catch
