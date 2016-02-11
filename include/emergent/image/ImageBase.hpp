@@ -224,41 +224,62 @@ namespace emergent
 
 
 			/// Add the values from another image to this one at the given offset
-			/// Any values that drop off the edges are ignored. If replace is true,
-			/// the image is inserted rather than summed into the destination.
+			/// Any values that drop off the edges are ignored. If sum is true then
+			/// values are summed into the destination. Only image depths of 3 and 1 are
+			/// supported unless sum is false and the depths are the same.
 			ImageBase<T> &Insert(const ImageBase<T> &image, int x, int y, bool sum = false)
 			{
-				if (image.depth == this->depth && x >= 0 && x < this->width && y >= 0 && y < this->height)
+				if (x >= 0 && x < this->width && y >= 0 && y < this->height)
 				{
-					int i, j, k;
-					int depth	= this->depth;
-					int ls		= this->width * depth;
-					int li		= image.Width() * depth;
-					int w 		= std::min(image.Width(), this->width - x);
-					int h 		= std::min(image.Height(), this->height - y);
-					T *ps 		= this->buffer + y * ls + x * depth;
-					T *pi 		= image;
+					int i, j;
+					int ds	= this->depth;
+					int di	= image.depth;
+					int ls	= this->width * ds;
+					int li	= image.width * di;
+					int w	= std::min(image.width, this->width - x);
+					int h	= std::min(image.height, this->height - y);
+					T *ps 	= this->buffer + y * ls + x * ds;
+					T *pi 	= image;
 
-					if (sum)
+					if (ds == di && !sum)
 					{
-						int js = ls - w * depth;
-						int ji = li - w * depth;
-
-						for (j=0; j<h; j++, pi+=ji, ps+=js)
-						{
-							for (i=0; i<w; i++)
-							{
-								for (k=0; k<depth; k++) *ps++ += *pi++;
-							}
-						}
-					}
-					else
-					{
-						int line = w * depth * sizeof(T);
+						// Faster option for images of equal depth when not summing
+						int line = w * ds * sizeof(T);
 
 						for (j=0; j<h; j++, pi+=li, ps+=ls)
 						{
 							memcpy(ps, pi, line);
+						}
+					}
+					else
+					{
+						std::function<void(T *a, T *b)> convert = nullptr;
+
+						if (sum)
+						{
+							if (ds == 3 && di == 3) convert = [](T *a, T *b) { b[0] += a[0]; b[1] += a[1]; b[2] += a[2]; };
+							if (ds == 3 && di == 1) convert = [](T *a, T *b) { b[0] += a[0]; b[1] += a[0]; b[2] += a[0]; };
+							if (ds == 1 && di == 3) convert = [](T *a, T *b) { b[0] += (a[0] + a[1] + a[2]) / 3; };
+							if (ds == 1 && di == 1) convert = [](T *a, T *b) { b[0] += a[0]; };
+						}
+						else
+						{
+							if (ds == 3 && di == 1) convert = [](T *a, T *b) { b[0] = a[0]; b[1] = a[0]; b[2] = a[0]; };
+							if (ds == 1 && di == 3) convert = [](T *a, T *b) { b[0] = (a[0] + a[1] + a[2]) / 3; };
+						}
+
+						if (convert)
+						{
+							int js = ls - w * ds;
+							int ji = li - w * di;
+
+							for (j=0; j<h; j++, pi+=ji, ps+=js)
+							{
+								for (i=0; i<w; i++, ps+=ds, pi+=di)
+								{
+									convert(pi, ps);
+								}
+							}
 						}
 					}
 				}

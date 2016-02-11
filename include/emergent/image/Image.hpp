@@ -98,15 +98,5 @@ namespace emergent
 			{
 				return ImageBase<T>::LoadRaw(path, true);
 			}
-
-
-			/// Add the values from another image to this one at the given offset
-			/// Any values that drop off the edges are ignored. If replace is true,
-			/// the image is inserted rather than summed into the destination.
-			Image<T, D> &Insert(Image<T, D> &image, int x, int y, bool sum = false)
-			{
-				ImageBase<T>::Insert(image, x, y, sum);
-				return *this;
-			}
 	};
 }
