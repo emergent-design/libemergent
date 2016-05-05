@@ -56,6 +56,7 @@ namespace redis
 			bool Persist(string key)						{ return Command("PERSIST %s", key.c_str()).AsBool(); }
 			bool Rename(string key, string newKey)			{ return Command("RENAME %s %s", key.c_str(), newKey.c_str()).AsStatus(); }
 			string Type(string key)							{ return Command("TYPE %s", key.c_str()).AsString(); }
+			long TimeToLive(string key)						{ return Command("TTL %s", key.c_str()).AsLong(); }
 
 			// Strings
 			long Append(string key, string value)			{ return Command("APPEND %s %s", key.c_str(), value.c_str()).AsLong(); }
