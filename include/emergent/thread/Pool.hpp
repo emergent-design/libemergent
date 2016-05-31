@@ -15,10 +15,8 @@ namespace emergent
 {
 	namespace internal
 	{
-		struct TaskBase
-		{
-			virtual void Run() = 0;
-		};
+		// A base class allows the thread pool to queue tasks of arbitrary return type.
+		struct TaskBase { virtual void Run() = 0; };
 
 		// Task is separated out from the ThreadPool class since it requires
 		// a specialisation to handle the "void" case for promise.
@@ -29,7 +27,7 @@ namespace emergent
 
 			Task(std::function<T()> &&job) : job(std::move(job)) {}
 
-			virtual void Run()
+			void Run()
 			{
 				this->promise.set_value(this->job());
 			}
@@ -49,6 +47,7 @@ namespace emergent
 	{
 		public:
 
+			// The ThreadPool launches an additional thread to manage the queue.
 			ThreadPool()
 			{
 				using namespace std::chrono;
@@ -82,6 +81,8 @@ namespace emergent
 			}
 
 
+			// Whilst the futures returned by Run() will not block, the destruction
+			// of the pool will wait for all threads to complete their current tasks.
 			~ThreadPool()
 			{
 				this->cs.lock();
@@ -116,6 +117,7 @@ namespace emergent
 
 		private:
 
+			// Helper responsible for a single thread in the pool.
 			struct Thread
 			{
 				std::mutex cs;
@@ -165,6 +167,7 @@ namespace emergent
 				}
 
 
+				// Assign a task to this thread and wake it up.
 				void Assign(std::shared_ptr<internal::TaskBase> task)
 				{
 					this->cs.lock();
@@ -175,14 +178,19 @@ namespace emergent
 			};
 
 
-
-			bool run = true;
+			// Maximum queue size
 			static const int QUEUE_MAX = 1024;
 
+			// Threading members
 			std::mutex cs;
 			std::thread thread;
-			std::array<Thread, N> threads;
 			std::condition_variable condition;
+			bool run = true;
+
+			// The pool of threads
+			std::array<Thread, N> threads;
+
+			// The queue of tasks to be executed
 			std::queue<std::shared_ptr<internal::TaskBase>> queue;
 	};
 }

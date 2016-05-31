@@ -5,7 +5,6 @@ A collection of useful classes:
 
   * [Buffer<>](https://github.com/emergent-design/libemergent/wiki#buffer)
   * [Image<>](https://github.com/emergent-design/libemergent/wiki#image)
-  * [Redis](https://github.com/emergent-design/libemergent/wiki#redis)
   * [ResetEvent](https://github.com/emergent-design/libemergent/wiki#resetevent)
   * [DateTime](https://github.com/emergent-design/libemergent/wiki#datetime)
   * [Logger](https://github.com/emergent-design/libemergent/wiki#logger)
@@ -16,8 +15,9 @@ A collection of useful classes:
   * [Type](https://github.com/emergent-design/libemergent/wiki#type)
   * [Uuid](https://github.com/emergent-design/libemergent/wiki#uuid)
   * [Profile](https://github.com/emergent-design/libemergent/wiki#profile)
-  * [Clap](https://github.com/emergent-design/libemergent/wiki#clap)
-
+  * [ThreadPool](https://github.com/emergent-design/libemergent/wiki#threadpool)
+  * [Redis](https://github.com/emergent-design/libemergent/wiki/Redis)
+  * [Clap](https://github.com/emergent-design/libemergent/wiki/Clap)
 
 Installation
 ============
@@ -30,13 +30,10 @@ which will install the headers to ```/usr/include```.
 Dependencies
 ============
 
-libemergent has the following external dependencies. You must ensure that the appropriate headers and binaries
-are available on the include/lib paths if you use specific features of this library.
+libemergent has the following external dependencies. You must ensure that the appropriate headers and binaries are available on the include/lib paths if you use specific features of this library.
 
-  * [FreeImage](http://freeimage.sourceforge.net/download.html) for loading and saving images. Your application must
-  link to this if you use the Image<> class.
-  * [hiredis](https://github.com/redis/hiredis) client library. Your application must link to this if you
-  use any of the Redis classes.
+  * [FreeImage](http://freeimage.sourceforge.net/download.html) for loading and saving images. Your application must link to this if you use the Image<> class.
+  * [hiredis](https://github.com/redis/hiredis) client library. Your application must link to this if you use any of the Redis classes.
 
 On debian-based systems the relevant dependencies can be easily installed as follows:
 
