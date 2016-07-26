@@ -7,7 +7,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include <iostream>
 
 namespace emergent {
 namespace usock

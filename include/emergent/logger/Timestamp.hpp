@@ -3,6 +3,10 @@
 #include <ctime>
 #include <emergent/String.hpp>
 
+#ifdef __GNUC__
+	#include <sys/time.h>
+#endif
+
 
 namespace emergent
 {
@@ -56,5 +60,22 @@ namespace emergent
 					1900 + t.tm_year, 1 + t.tm_mon, t.tm_mday
 				);
 			}
+
+
+			/// A millisecond precision timestamp (linux only)
+			static const std::string LogTime()
+			{
+				#ifdef __GNUC__
+					struct timeval t;
+
+					if (gettimeofday(&t, nullptr) == 0)
+					{
+						return String::format("%u.%03u", t.tv_sec, t.tv_usec / 1000);
+					}
+				#endif
+
+				return "";
+			}
 	};
 }
+
