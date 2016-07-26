@@ -1,11 +1,8 @@
 #pragma once
 
 #include <ctime>
+#include <chrono>
 #include <emergent/String.hpp>
-
-#ifdef __GNUC__
-	#include <sys/time.h>
-#endif
 
 
 namespace emergent
@@ -62,19 +59,12 @@ namespace emergent
 			}
 
 
-			/// A millisecond precision timestamp (linux only)
-			static const std::string LogTime()
+			/// A millisecond precision time point
+			static const uint64_t LogTime()
 			{
-				#ifdef __GNUC__
-					struct timeval t;
-
-					if (gettimeofday(&t, nullptr) == 0)
-					{
-						return String::format("%u.%03u", t.tv_sec, t.tv_usec / 1000);
-					}
-				#endif
-
-				return "";
+				return std::chrono::duration_cast<std::chrono::milliseconds>(
+					std::chrono::high_resolution_clock::now().time_since_epoch()
+				).count();
 			}
 	};
 }
