@@ -4,7 +4,7 @@ VERSION="$(cat version)"
 root="libemergent-dev"
 
 echo "Copying files ..."
-gzip -c9 debian/changelog > changelog.gz
+gzip -nc9 debian/changelog > changelog.gz
 mkdir -p $root/usr/include
 cp changelog.gz $root/usr/share/doc/$root/
 cp -r ../include/emergent $root/usr/include/
