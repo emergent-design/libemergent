@@ -96,16 +96,58 @@ namespace emergent
 				return sine(angle + 90);
 			}
 
-			/// Lookup table for cosine values where the index is the angle in degrees (0-360)
-			// static const double COS[361];
-
-			/// Lookup table for sine values where the index is the angle in degrees (0-360)
-			// static const double SIN[361];
 
 			/// Normalised random number
 			static inline double nrand()
 			{
 				return (double)rand() / (double)RAND_MAX;
+			}
+
+
+			// Calculate the average value between two percentiles of a histogram.
+			// The lower and upper parameters define the interpercentile range; valid values are
+			// between 0.0 and 1.0 inclusive.
+			template <std::size_t N> static double interpercentile(std::array<int, N> &histogram, double lower, double upper)
+			{
+				if (lower >= upper || lower < 0.0 || upper > 1.0)
+				{
+					return 0.0;
+				}
+
+				long total		= 0;
+				long count		= 0;
+				long sum		= 0;
+				long samples	= 0;
+
+				for (auto &h : histogram) total += h;
+
+				if (total)
+				{
+					long start	= lrint(lower * total);
+					long end	= lrint(upper * total);
+
+					for (int i=0; i<N; i++)
+					{
+						count += histogram[i];
+
+						if (count >= end)
+						{
+							sum 	+= (end - start) * i;
+							samples += end - start;
+							break;
+						}
+						if (count > start)
+						{
+							sum 	+= (count - start) * i;
+							samples += count - start;
+							start	= count;
+						}
+					}
+
+					return samples ? (double)sum / (double)samples : 0.0;
+				}
+
+				return 0.0;
 			}
 	};
 
