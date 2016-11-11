@@ -1,7 +1,7 @@
 #pragma once
 
 #include <emergent/Emergent.hpp>
-
+#include <array>
 
 namespace emergent
 {
