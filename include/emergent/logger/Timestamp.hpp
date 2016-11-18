@@ -13,13 +13,18 @@ namespace emergent
 
 			static inline tm Time()
 			{
+				return From(time(0));
+			}
+
+
+			static inline tm From(time_t time)
+			{
 				tm result;
-				time_t now = time(0);
 
 				#ifdef __GNUC__
-					localtime_r(&now, &result);
+					localtime_r(&time, &result);
 				#else
-					localtime_s(&result, &now);
+					localtime_s(&result, &time);
 				#endif
 
 				return result;
