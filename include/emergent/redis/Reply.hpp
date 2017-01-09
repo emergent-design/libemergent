@@ -10,6 +10,7 @@ namespace redis
 	using std::string;
 	using std::vector;
 	using std::map;
+	using std::pair;
 
 	class Reply
 	{
@@ -127,6 +128,37 @@ namespace redis
 				}
 
 				return result;
+			}
+
+
+			// Return a pair where the first element is the cursor of the scan
+			// the second element is the array of items (from a SCAN).
+			pair<long, vector<string>> AsScanArray()
+			{
+				if (this->elements.size() == 2)
+				{
+					return {
+						this->elements[0].AsLong(),
+						this->elements[1].AsStringArray()
+					};
+				}
+
+				return {};
+			}
+
+			// Return a pair where the first element is the cursor of the scan
+			// and the second element is the map of items (from an SSCAN, HSCAN or ZSCAN)
+			pair<long, map<string, string>> AsScanMap()
+			{
+				if (this->elements.size() == 2)
+				{
+					return {
+						this->elements[0].AsLong(),
+						this->elements[1].AsStringMap()
+					};
+				}
+
+				return {};
 			}
 
 

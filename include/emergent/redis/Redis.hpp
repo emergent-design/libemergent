@@ -73,6 +73,7 @@ namespace redis
 			bool Set(string key, double value)				{ return Command("SET %s %g", key.c_str(), value).Ok(); }
 			bool Set(string key, string value, long expiry)	{ return Command("SET %s %s EX %ld", key.c_str(), value.c_str(), expiry).Ok(); }
 			long Length(string key)							{ return Command("STRLEN %s", key.c_str()).AsLong(); }
+			pair<long, vector<string>> Scan(long cursor)	{ return Command("SCAN %ld", cursor).AsScanArray(); }
 
 			// Lists
 			string ListIndex(string key, int index)						{ return Command("LINDEX %s %ld", key.c_str(), index).AsString(); }
@@ -93,32 +94,34 @@ namespace redis
 			}
 
 			// Sets
-			bool SetAdd(string key, string member)				{ return Command("SADD %s %s", key.c_str(), member.c_str()).AsBool(); }
-			long Cardinality(string key)						{ return Command("SCARD %s", key.c_str()).AsLong(); }
-			vector<string> Difference(string a, string b)		{ return Command("SDIFF %s %s", a.c_str(), b.c_str()).AsStringArray(); }
-			vector<string> Intersection(string a, string b)		{ return Command("SINTER %s %s", a.c_str(), b.c_str()).AsStringArray(); }
-			bool IsMember(string key, string member)			{ return Command("SISMEMBER %s %s", key.c_str(), member.c_str()).AsBool(); }
-			vector<string> Members(string key)					{ return Command("SMEMBERS %s", key.c_str()).AsStringArray(); }
-			bool SetMove(string src, string dst, string member)	{ return Command("SMOVE %s %s %s", src.c_str(), dst.c_str(), member.c_str()).AsBool(); }
-			bool SetRemove(string key, string member)			{ return Command("SREM %s %s", key.c_str(), member.c_str()).AsBool(); }
-			vector<string> Union(string a, string b)			{ return Command("SUNION %s %s", a.c_str(), b.c_str()).AsStringArray(); }
+			bool SetAdd(string key, string member)							{ return Command("SADD %s %s", key.c_str(), member.c_str()).AsBool(); }
+			long Cardinality(string key)									{ return Command("SCARD %s", key.c_str()).AsLong(); }
+			vector<string> Difference(string a, string b)					{ return Command("SDIFF %s %s", a.c_str(), b.c_str()).AsStringArray(); }
+			vector<string> Intersection(string a, string b)					{ return Command("SINTER %s %s", a.c_str(), b.c_str()).AsStringArray(); }
+			bool IsMember(string key, string member)						{ return Command("SISMEMBER %s %s", key.c_str(), member.c_str()).AsBool(); }
+			vector<string> Members(string key)								{ return Command("SMEMBERS %s", key.c_str()).AsStringArray(); }
+			bool SetMove(string src, string dst, string member)				{ return Command("SMOVE %s %s %s", src.c_str(), dst.c_str(), member.c_str()).AsBool(); }
+			bool SetRemove(string key, string member)						{ return Command("SREM %s %s", key.c_str(), member.c_str()).AsBool(); }
+			vector<string> Union(string a, string b)						{ return Command("SUNION %s %s", a.c_str(), b.c_str()).AsStringArray(); }
+			pair<long, vector<string>> SetScan(string key, long cursor)		{ return Command("SSCAN %s %ld", key.c_str(), cursor).AsScanArray(); }
 
 			// Hashes
-			bool HashDelete(string key, string field)						{ return Command("HDEL %s %s", key.c_str(), field.c_str()).AsBool(); }
-			bool HashExists(string key, string field)						{ return Command("HEXISTS %s %s", key.c_str(), field.c_str()).AsBool(); }
-			string HashGet(string key, string field)						{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsString(); }
-			long HashGet(string key, string field, long defaultValue)		{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsLong(defaultValue); }
-			double HashGet(string key, string field, double defaultValue)	{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsDouble(defaultValue); }
-			map<string, string> HashGetAll(string key)						{ return Command("HGETALL %s", key.c_str()).AsStringMap(); }
-			long HashIncrement(string key, string field, long amount)		{ return Command("HINCRBY %s %s %ld", key.c_str(), field.c_str(), amount).AsLong(); }
-			double HashIncrement(string key, string field, double amount)	{ return Command("HINCRBYFLOAT %s %s %g", key.c_str(), field.c_str(), amount).AsDouble(); }
-			vector<string> HashKeys(string key)								{ return Command("HKEYS %s", key.c_str()).AsStringArray(); }
-			long HashLength(string key)										{ return Command("HLEN %s", key.c_str()).AsLong(); }
-			bool HashSet(string key, string field, string value)			{ return Command("HSET %s %s %s", key.c_str(), field.c_str(), value.c_str()).AsBool(); }
-			bool HashSet(string key, string field, long value)				{ return Command("HSET %s %s %ld", key.c_str(), field.c_str(), value).AsBool(); }
-			bool HashSet(string key, string field, double value)			{ return Command("HSET %s %s %g", key.c_str(), field.c_str(), value).AsBool(); }
-			long HashStringLength(string key, string field)					{ return Command("HSTRLEN %s %s", key.c_str(), field.c_str()).AsLong(); }
-			vector<string> HashValues(string key)							{ return Command("HVALS %s", key.c_str()).AsStringArray(); }
+			bool HashDelete(string key, string field)							{ return Command("HDEL %s %s", key.c_str(), field.c_str()).AsBool(); }
+			bool HashExists(string key, string field)							{ return Command("HEXISTS %s %s", key.c_str(), field.c_str()).AsBool(); }
+			string HashGet(string key, string field)							{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsString(); }
+			long HashGet(string key, string field, long defaultValue)			{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsLong(defaultValue); }
+			double HashGet(string key, string field, double defaultValue)		{ return Command("HGET %s %s", key.c_str(), field.c_str()).AsDouble(defaultValue); }
+			map<string, string> HashGetAll(string key)							{ return Command("HGETALL %s", key.c_str()).AsStringMap(); }
+			long HashIncrement(string key, string field, long amount)			{ return Command("HINCRBY %s %s %ld", key.c_str(), field.c_str(), amount).AsLong(); }
+			double HashIncrement(string key, string field, double amount)		{ return Command("HINCRBYFLOAT %s %s %g", key.c_str(), field.c_str(), amount).AsDouble(); }
+			vector<string> HashKeys(string key)									{ return Command("HKEYS %s", key.c_str()).AsStringArray(); }
+			long HashLength(string key)											{ return Command("HLEN %s", key.c_str()).AsLong(); }
+			bool HashSet(string key, string field, string value)				{ return Command("HSET %s %s %s", key.c_str(), field.c_str(), value.c_str()).AsBool(); }
+			bool HashSet(string key, string field, long value)					{ return Command("HSET %s %s %ld", key.c_str(), field.c_str(), value).AsBool(); }
+			bool HashSet(string key, string field, double value)				{ return Command("HSET %s %s %g", key.c_str(), field.c_str(), value).AsBool(); }
+			long HashStringLength(string key, string field)						{ return Command("HSTRLEN %s %s", key.c_str(), field.c_str()).AsLong(); }
+			vector<string> HashValues(string key)								{ return Command("HVALS %s", key.c_str()).AsStringArray(); }
+			pair<long, map<string, string>> HashScan(string key, long cursor)	{ return Command("HSCAN %s %ld", key.c_str(), cursor).AsScanMap(); }
 
 			// Sorted Sets
 			bool SortedAdd(string key, string member, double score = 0.0)						{ return Command("ZADD %s %g %s", key.c_str(), score, member.c_str()).AsBool(); }
@@ -139,6 +142,7 @@ namespace redis
 			vector<string> SortedRevRangeByScore(string key, double min, double max)			{ return Command("ZREVRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsStringArray(); }
 			long SortedRevRank(string key, string member)										{ return Command("ZREVRANK %s %s", key.c_str(), member.c_str()).AsLong(); }
 			double SortedScore(string key, string member)										{ return Command("ZSCORE %s %s", key.c_str(), member.c_str()).AsDouble(); }
+			pair<long, map<string, string>> SortedScan(string key, long cursor)					{ return Command("ZSCAN %s %ld", key.c_str(), cursor).AsScanMap(); }
 			// HLL?
 
 			// Publish
