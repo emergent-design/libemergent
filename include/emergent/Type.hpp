@@ -55,6 +55,20 @@ namespace emergent
 			}
 
 
+			/// List all available types
+			static std::vector<std::string> List()
+			{
+				std::vector<std::string> result;
+
+				for (auto &t : Master().types)
+				{
+					result.push_back(t.first);
+				}
+
+				return result;
+			}
+
+
 			/// Print all registered types derived from T
 			/// If multiline is true, each type name is printed on its own line, otherwise
 			/// they are printed on a single line with space separation.
