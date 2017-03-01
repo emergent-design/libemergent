@@ -23,7 +23,16 @@ namespace emergent
 				// Seed the engine once per thread since excessive use
 				// of random_device will result in a severe performance
 				// drop (entropy pool exhaustion).
-				engine.seed(std::random_device()());
+				auto seed = std::random_device()();
+
+				#ifdef __MINGW32__
+					// Since mingw does not implement std::random_device properly, retrieve
+					// a seed using the system time.
+					seed = time(0);
+				#endif
+
+				engine.seed(seed);
+
 				seeded = true;
 			}
 
