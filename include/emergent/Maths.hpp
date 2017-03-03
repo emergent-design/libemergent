@@ -107,7 +107,7 @@ namespace emergent
 			// Calculate the average value between two percentiles of a histogram.
 			// The lower and upper parameters define the interpercentile range; valid values are
 			// between 0.0 and 1.0 inclusive.
-			template <std::size_t N> static double interpercentile(std::array<int, N> &histogram, double lower, double upper)
+			template <std::size_t N> static double interpercentile(const std::array<int, N> &histogram, double lower, double upper)
 			{
 				if (lower >= upper || lower < 0.0 || upper > 1.0)
 				{
