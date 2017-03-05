@@ -4,6 +4,7 @@
 #include <fstream>
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 #ifdef __GNUC__
 	#include <cxxabi.h>
