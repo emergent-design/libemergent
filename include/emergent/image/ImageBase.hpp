@@ -522,8 +522,8 @@ namespace emergent
 			}
 
 
-			auto begin()	{ return this->buffer.begin(); }
-			auto end()		{ return this->buffer.end(); }
+			typename Buffer<T>::iterator begin()	{ return this->buffer.begin(); }
+			typename Buffer<T>::iterator end()		{ return this->buffer.end(); }
 
 
 		protected:
