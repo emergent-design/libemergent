@@ -9,30 +9,30 @@ namespace emergent
 	///
 	/// Only numeric types of image are permitted, a compiler error
 	/// will occur otherwise.
-	template <class T = byte, byte D = 1> class Image : public ImageBase<T>
+	template <typename T = byte, byte D = 1, class A = std::allocator<T>> class Image : public ImageBase<T, A>
 	{
 		public:
 			/// Default constructor
-			Image() : ImageBase<T>(D) {}
+			Image() : ImageBase<T, A>(D) {}
 
 
 			/// Constructor that allocates an image buffer of the required size
-			Image(int width, int height) : ImageBase<T>(D, width, height) {}
+			Image(int width, int height) : ImageBase<T, A>(D, width, height) {}
 
 
 			/// Constructor that loads an image from file
-			Image(std::string path) : ImageBase<T>(path, D) {}
+			Image(std::string path) : ImageBase<T, A>(path, D) {}
 
 
 			/// Copy constructor with automatic type conversion
-			template <class U> Image(const ImageBase<U> &image) : ImageBase<T>(D)
+			template <typename U, typename V> Image(const ImageBase<U, V> &image) : ImageBase<T, A>(D)
 			{
 				this->Copy(image);
 			}
 
 
 			/// Assignment override with type conversion
-			template <class U> Image<T, D> &operator=(const ImageBase<U> &image)
+			template <typename U, typename V> Image<T, D, A> &operator=(const ImageBase<U, V> &image)
 			{
 				this->Copy(image);
 				return *this;
@@ -41,7 +41,7 @@ namespace emergent
 
 			/// Assignment override which will set all pixels in the image to the given value
 			/// Can be used to clear all the pixels of an RGB image to 0,0,0 for example.
-			Image<T, D> &operator=(const T value)
+			Image<T, D, A> &operator=(const T value)
 			{
 				this->buffer = value;
 				return *this;
@@ -59,7 +59,7 @@ namespace emergent
 					);
 				}
 
-				ImageBase<T>::Resize(width, height);
+				ImageBase<T, A>::Resize(width, height);
 			}
 
 
@@ -74,7 +74,7 @@ namespace emergent
 					);
 				}
 
-				return ImageBase<T>::Load(path);
+				return ImageBase<T, A>::Load(path);
 			}
 
 
@@ -89,14 +89,14 @@ namespace emergent
 					);
 				}
 
-				return ImageBase<T>::Load(buffer);
+				return ImageBase<T, A>::Load(buffer);
 			}
 
 
 			/// Prevent the depth from being changed for this derived type of image.
 			virtual bool LoadRaw(std::string path)
 			{
-				return ImageBase<T>::LoadRaw(path, true);
+				return ImageBase<T, A>::LoadRaw(path, true);
 			}
 	};
 }

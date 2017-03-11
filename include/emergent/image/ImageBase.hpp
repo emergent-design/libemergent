@@ -23,7 +23,7 @@ namespace emergent
 
 
 	/// Base class for images of a given arithmetic type.
-	template <class T = byte> class ImageBase
+	template <typename T = byte, class A = std::allocator<T>> class ImageBase
 	{
 		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric or boolean");
 
@@ -46,8 +46,15 @@ namespace emergent
 			}
 
 
+			ImageBase(const ImageBase<T, A> &image)
+			{
+				this->depth = image.depth;
+				this->Copy(image);
+			}
+
+
 			//The depth of the source image is copied.
-			ImageBase(const ImageBase<T> &image)
+			template <typename V> ImageBase(const ImageBase<T, V> &image)
 			{
 				this->depth = image.depth;
 				this->Copy(image);
@@ -56,7 +63,7 @@ namespace emergent
 
 			/// Copy constructor with automatic type conversion. The depth
 			/// of the source image is copied.
-			template <class U> ImageBase(const ImageBase<U> &image)
+			template <typename U, typename V> ImageBase(const ImageBase<U, V> &image)
 			{
 				this->depth = image.depth;
 				this->Copy(image);
@@ -67,7 +74,15 @@ namespace emergent
 
 
 			//The depth of this image is retained.
-			ImageBase<T> &operator=(const ImageBase<T> &image)
+			ImageBase<T, A> &operator=(const ImageBase<T, A> &image)
+			{
+				this->Copy(image);
+				return *this;
+			}
+
+
+			//The depth of this image is retained.
+			template <typename V> ImageBase<T, A> &operator=(const ImageBase<T, V> &image)
 			{
 				this->Copy(image);
 				return *this;
@@ -76,7 +91,7 @@ namespace emergent
 
 			/// Assignment override with type conversion. The depth of this
 			/// image is retained.
-			template <class U> ImageBase<T> &operator=(const ImageBase<U> &image)
+			template <typename U, typename V> ImageBase<T, A> &operator=(const ImageBase<U, V> &image)
 			{
 				this->Copy(image);
 				return *this;
@@ -85,7 +100,7 @@ namespace emergent
 
 			/// Assignment override which will set all pixels in the image to the given value
 			/// Can be used to clear all the pixels of an RGB image to 0,0,0 for example.
-			ImageBase<T> &operator=(const T value)
+			ImageBase<T, A> &operator=(const T value)
 			{
 				this->buffer = value;
 				return *this;
@@ -100,7 +115,7 @@ namespace emergent
 
 			/// Return the actual internal buffer.
 			/// WARNING: If you modify the size of this buffer you will corrupt the owner image
-			Buffer<T> &Internal() { return this->buffer; }
+			Buffer<T, A> &Internal() { return this->buffer; }
 
 			/// Return the image type ID
 			//int Type() { return this->type; }
@@ -227,7 +242,7 @@ namespace emergent
 			/// Any values that drop off the edges are ignored. If sum is true then
 			/// values are summed into the destination. Only image depths of 3 and 1 are
 			/// supported unless sum is false and the depths are the same.
-			ImageBase<T> &Insert(const ImageBase<T> &image, int x, int y, bool sum = false)
+			template <typename V> ImageBase<T, A> &Insert(const ImageBase<T, V> &image, int x, int y, bool sum = false)
 			{
 				if (x >= 0 && x < this->width && y >= 0 && y < this->height)
 				{
@@ -522,8 +537,8 @@ namespace emergent
 			}
 
 
-			typename Buffer<T>::iterator begin()	{ return this->buffer.begin(); }
-			typename Buffer<T>::iterator end()		{ return this->buffer.end(); }
+			typename Buffer<T, A>::iterator begin()	{ return this->buffer.begin(); }
+			typename Buffer<T, A>::iterator end()		{ return this->buffer.end(); }
 
 
 		protected:
@@ -538,7 +553,7 @@ namespace emergent
 			int height = 0;
 
 			/// Buffer for the actual image data
-			Buffer<T> buffer;
+			Buffer<T, A> buffer;
 
 
 
@@ -744,7 +759,7 @@ namespace emergent
 			/// image to a greyscale byte image it will first convert from int to byte by normalising the values
 			/// and scaling to byte (if necessary). Then it will convert from RGB to greyscale. If the source image
 			/// is the same type as this then it should be pretty fast since it is a simple buffer copy instead.
-			template <class U> void Copy(const ImageBase<U> &image)
+			template <typename U, typename V> void Copy(const ImageBase<U, V> &image)
 			{
 				const T max		= std::numeric_limits<T>::max();
 				this->width		= image.width;
@@ -793,7 +808,7 @@ namespace emergent
 
 			/// If the image to be copied is of the same type and depth as this one then simply copy the buffer, otherwise
 			/// convert appropriately (supports grey to RGB and vice versa).
-			void Copy(const ImageBase<T> &image)
+			template <typename V> void Copy(const ImageBase<T, V> &image)
 			{
 				this->width		= image.width;
 				this->height	= image.height;
@@ -860,6 +875,6 @@ namespace emergent
 
 			/// Allows the private members of this class
 			/// to be accessed by other template variants
-			template<class U> friend class ImageBase;
+			template<typename U, typename V> friend class ImageBase;
 	};
 }
