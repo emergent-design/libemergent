@@ -50,6 +50,12 @@ namespace emergent
 				this->Copy(buffer);
 			}
 
+			// Copy a buffer with a different allocator
+			template <typename A> Buffer(const Buffer<T, A> &buffer)
+			{
+				this->Copy(buffer);
+			}
+
 
 			/// Construct from an initialiser list
 			Buffer(std::initializer_list<T> data)
@@ -76,7 +82,14 @@ namespace emergent
 
 
 			/// Assignment operator override
-			Buffer<T>& operator=(const Buffer<T> &buffer)
+			Buffer<T, Allocator>& operator=(const Buffer<T> &buffer)
+			{
+				this->Copy(buffer);
+				return *this;
+			}
+
+			/// Assignment operator override
+			template <typename A> Buffer<T, Allocator>& operator=(const Buffer<T, A> &buffer)
 			{
 				this->Copy(buffer);
 				return *this;
@@ -84,7 +97,7 @@ namespace emergent
 
 
 			/// Assignment operator override that will set the whole buffer to the given value
-			Buffer<T>& operator=(const T value)
+			Buffer<T, Allocator>& operator=(const T value)
 			{
 				T *src = this->data;
 
@@ -96,7 +109,7 @@ namespace emergent
 
 
 			/// Assignment from a binary string
-			Buffer<T>& operator=(const std::string value)
+			Buffer<T, Allocator>& operator=(const std::string value)
 			{
 				if (value.length() % sizeof(T) == 0)
 				{
@@ -329,7 +342,7 @@ namespace emergent
 
 			/// Copy the supplied buffer data into this. It will
 			/// only resize the internal buffer where necessary.
-			void Copy(const Buffer<T> &buffer)
+			template <typename A> void Copy(const Buffer<T, A> &buffer)
 			{
 				this->Resize(buffer.size);
 				memcpy(this->data, buffer.data, buffer.size * sizeof(T));
@@ -350,6 +363,11 @@ namespace emergent
 			T dummy = T();
 
 			Allocator allocator;
+
+
+			/// Allows the private members of this class
+			/// to be accessed by other template variants
+			template<typename U, typename A> friend class Buffer;
 	};
 }
 
