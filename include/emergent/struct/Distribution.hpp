@@ -24,7 +24,7 @@ namespace emergent
 
 
 		/// Constructor with automatic analysis of supplied buffer
-		template <class T, class A> distribution(const Buffer<T, A> &data, Buffer<byte> *mask = nullptr)
+		template <class T> distribution(const Buffer<T> &data, Buffer<byte> *mask = nullptr)
 		{
 			this->analyse(data, mask);
 		}
@@ -45,7 +45,7 @@ namespace emergent
 
 
 		/// Generate stats from a buffer
-		template <class T, class A> bool analyse(const Buffer<T, A> &data, Buffer<byte> *mask)
+		template <class T> bool analyse(const Buffer<T> &data, Buffer<byte> *mask)
 		{
 			if (mask && mask->Size() != data.Size()) return false;
 

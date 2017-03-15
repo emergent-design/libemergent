@@ -10,7 +10,7 @@
 namespace emergent
 {
 	/// Templated buffer implementation
-	template <class T, class Allocator = std::allocator<T>> class Buffer
+	template <class T> class Buffer
 	{
 		public:
 
@@ -54,11 +54,9 @@ namespace emergent
 			/// Construct from an initialiser list
 			Buffer(std::initializer_list<T> data)
 			{
-				// this->size	= data.size();
-				// this->max	= this->size;
-				// // this->data	= new T[this->size];
-				// this->data	= this->allocator.allocate(size);
-				this->Resize(data.size());
+				this->size	= data.size();
+				this->max	= this->size;
+				this->data	= new T[this->size];
 
 				memcpy(this->data, data.begin(), this->size * sizeof(T));
 			}
@@ -67,11 +65,7 @@ namespace emergent
 			/// Destructor
 			~Buffer()
 			{
-				// if (this->data) delete [] this->data;
-				if (this->data)
-				{
-					this->allocator.deallocate(this->data, this->max);
-				}
+				if (this->data) delete [] this->data;
 			}
 
 
@@ -114,12 +108,10 @@ namespace emergent
 				{
 					T *temp		= this->data;
 					this->max	= this->size + buffer.Size();
-					// this->data	= new T[this->max];
-					this->data	= this->allocator.allocate(this->max);
+					this->data	= new T[this->max];
 
 					memcpy(this->data, temp, this->size * sizeof(T));
-					// delete [] temp;
-					this->allocator.deallocate(temp, this->size);
+					delete [] temp;
 				}
 
 				memcpy(this->data + this->size * sizeof(T), buffer.data, buffer.size * sizeof(T));
@@ -151,14 +143,9 @@ namespace emergent
 			{
 				if (size > this->max)
 				{
-					if (this->data)
-					{
-						// delete [] this->data;
-						this->allocator.deallocate(this->data, this->max);
-					}
+					if (this->data) delete [] this->data;
 
-					// this->data	= new T[size];
-					this->data	= this->allocator.allocate(size);
+					this->data	= new T[size];
 					this->max	= size;
 				}
 
@@ -172,13 +159,11 @@ namespace emergent
 				if (this->max > this->size && this->size > 0)
 				{
 					T *temp		= this->data;
-					// this->data	= new T[this->size];
-					this->data	= this->allocator.allocate(this->size);
+					this->data	= new T[this->size];
+					this->max	= this->size;
 
 					memcpy(this->data, temp, this->size * sizeof(T));
-					// delete [] temp;
-					this->allocator.deallocate(temp, this->max);
-					this->max = this->size;
+					delete [] temp;
 				}
 			}
 
@@ -348,8 +333,6 @@ namespace emergent
 			/// Dummy value used by the array index operator overload
 			/// when returning an out of bounds value reference.
 			T dummy = T();
-
-			Allocator allocator;
 	};
 }
 
