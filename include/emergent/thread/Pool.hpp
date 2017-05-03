@@ -25,13 +25,13 @@ namespace emergent
 
 			Task(std::function<T()> &&job) : job(std::move(job)) {}
 
-			void Run()
+			inline void Run()
 			{
 				this->promise.set_value(this->job());
 			}
 		};
 
-		template <> void Task<void>::Run()
+		template <> inline void Task<void>::Run()
 		{
 			this->job();
 			this->promise.set_value();
