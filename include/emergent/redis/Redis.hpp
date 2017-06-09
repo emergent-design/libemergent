@@ -59,21 +59,21 @@ namespace redis
 			long TimeToLive(string key)						{ return Command("TTL %s", key.c_str()).AsLong(); }
 
 			// Strings
-			long Append(string key, string value)			{ return Command("APPEND %s %s", key.c_str(), value.c_str()).AsLong(); }
-			long Decrement(string key)						{ return Command("DECR %s", key.c_str()).AsLong(); }
-			long Decrement(string key, long amount)			{ return Command("DECRBY %s %ld", key.c_str(), amount).AsLong(); }
-			string Get(string key)							{ return Command("GET %s", key.c_str()).AsString(); }
-			long Get(string key, long defaultValue)			{ return Command("GET %s", key.c_str()).AsLong(defaultValue); }
-			double Get(string key, double defaultValue)		{ return Command("GET %s", key.c_str()).AsDouble(defaultValue); }
-			long Increment(string key)						{ return Command("INCR %s", key.c_str()).AsLong(); }
-			long Increment(string key, long amount)			{ return Command("INCRBY %s %ld", key.c_str(), amount).AsLong(); }
-			double Increment(string key, double amount)		{ return Command("INCRBYFLOAT %s %g", key.c_str(), amount).AsDouble(); }
-			bool Set(string key, string value)				{ return Command("SET %s %s", key.c_str(), value.c_str()).Ok(); }
-			bool Set(string key, long value)				{ return Command("SET %s %ld", key.c_str(), value).Ok(); }
-			bool Set(string key, double value)				{ return Command("SET %s %g", key.c_str(), value).Ok(); }
-			bool Set(string key, string value, long expiry)	{ return Command("SET %s %s EX %ld", key.c_str(), value.c_str(), expiry).Ok(); }
-			long Length(string key)							{ return Command("STRLEN %s", key.c_str()).AsLong(); }
-			pair<long, vector<string>> Scan(long cursor)	{ return Command("SCAN %ld", cursor).AsScanArray(); }
+			long Append(string key, string value)					{ return Command("APPEND %s %s", key.c_str(), value.c_str()).AsLong(); }
+			long Decrement(string key)								{ return Command("DECR %s", key.c_str()).AsLong(); }
+			long Decrement(string key, long amount)					{ return Command("DECRBY %s %ld", key.c_str(), amount).AsLong(); }
+			string Get(string key)									{ return Command("GET %s", key.c_str()).AsString(); }
+			long Get(string key, long defaultValue)					{ return Command("GET %s", key.c_str()).AsLong(defaultValue); }
+			double Get(string key, double defaultValue)				{ return Command("GET %s", key.c_str()).AsDouble(defaultValue); }
+			long Increment(string key)								{ return Command("INCR %s", key.c_str()).AsLong(); }
+			long Increment(string key, long amount)					{ return Command("INCRBY %s %ld", key.c_str(), amount).AsLong(); }
+			double Increment(string key, double amount)				{ return Command("INCRBYFLOAT %s %g", key.c_str(), amount).AsDouble(); }
+			bool Set(string key, const string &value)				{ return Command("SET %s %s", key.c_str(), value.c_str()).Ok(); }
+			bool Set(string key, long value)						{ return Command("SET %s %ld", key.c_str(), value).Ok(); }
+			bool Set(string key, double value)						{ return Command("SET %s %g", key.c_str(), value).Ok(); }
+			bool Set(string key, const string &value, long expiry)	{ return Command("SET %s %s EX %ld", key.c_str(), value.c_str(), expiry).Ok(); }
+			long Length(string key)									{ return Command("STRLEN %s", key.c_str()).AsLong(); }
+			pair<long, vector<string>> Scan(long cursor)			{ return Command("SCAN %ld", cursor).AsScanArray(); }
 
 			// Lists
 			string ListIndex(string key, int index)						{ return Command("LINDEX %s %ld", key.c_str(), index).AsString(); }

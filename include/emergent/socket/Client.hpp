@@ -24,7 +24,8 @@ namespace usock
 			}
 
 
-			bool Write(const std::vector<byte> &buffer)
+			// bool Write(const std::vector<byte> &buffer)
+			bool Write(const std::string &buffer)
 			{
 				if (!this->Connect()) return false;
 
@@ -55,7 +56,8 @@ namespace usock
 			}
 
 
-			bool Read(std::vector<byte> &buffer)
+			// bool Read(std::vector<byte> &buffer)
+			bool Read(std::string &buffer)
 			{
 				if (!this->Connect()) return false;
 
@@ -72,7 +74,7 @@ namespace usock
 
 				while (total < size)
 				{
-					rc = recv(this->fd, buffer.data() + total, size - total, 0);
+					rc = recv(this->fd, (byte *)buffer.data() + total, size - total, 0);
 
 					if (rc < 1)
 					{

@@ -25,7 +25,8 @@ namespace usock
 		public:
 
 
-			void OnMessage(std::function<bool(const std::vector<byte>&, std::vector<byte>&)> &&handler)
+			// void OnMessage(std::function<bool(const std::vector<byte>&, std::vector<byte>&)> &&handler)
+			void OnMessage(std::function<bool(const std::string&, std::string&)> &&handler)
 			{
 				this->onMessage = std::move(handler);
 			}
@@ -198,13 +199,15 @@ namespace usock
 
 			bool Read(pollfd *client)
 			{
-				static thread_local std::vector<byte> input(1024);
-				static thread_local std::vector<byte> output(1024);
+				// static thread_local std::vector<byte> input(1024);
+				// static thread_local std::vector<byte> output(1024);
+				static thread_local std::string input(1024, '\0');
+				static thread_local std::string output(1024, '\0');
 
 				uint32_t size	= 0;
 				uint32_t total	= 0;
 
-				int rc = read(client->fd, &size, sizeof(uint32_t));
+				int rc = recv(client->fd, &size, sizeof(uint32_t), 0);
 
 				if (rc != sizeof(uint32_t))
 				{
@@ -215,7 +218,7 @@ namespace usock
 
 				while (total < size)
 				{
-					rc = read(client->fd, input.data() + total, size - total);
+					rc = recv(client->fd, (byte *)input.data() + total, size - total, 0);
 
 					if (rc < 1)
 					{
@@ -237,13 +240,13 @@ namespace usock
 			}
 
 
-			void Write(pollfd *client, std::vector<byte> &buffer)
+			// void Write(pollfd *client, std::vector<byte> &buffer)
+			void Write(pollfd *client, const std::string &buffer)
 			{
 				uint32_t size	= buffer.size();
 				uint32_t total	= 0;
 
-
-				int rc = write(client->fd, &size, sizeof(uint32_t));
+				int rc = send(client->fd, &size, sizeof(uint32_t), MSG_NOSIGNAL);
 
 				if (rc != sizeof(uint32_t))
 				{
@@ -252,7 +255,7 @@ namespace usock
 
 				while (total < size)
 				{
-					rc = write(client->fd, buffer.data() + total, size - total);
+					rc = send(client->fd, buffer.data() + total, size - total, MSG_NOSIGNAL);
 
 					if (rc < 1)
 					{
@@ -269,7 +272,7 @@ namespace usock
 			// Time to wait (ms) when polling during a read/write.
 			static const int POLL_RW_WAIT = 100;
 
-			std::function<bool(const std::vector<byte>&, std::vector<byte>&)> onMessage;
+			std::function<bool(const std::string&, std::string&)> onMessage;
 
 			std::vector<pollfd> watchlist;
 			int used = 0;

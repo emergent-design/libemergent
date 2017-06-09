@@ -17,6 +17,24 @@ namespace redis
 			using Redis::Publish;
 
 
+			// To retrieve a binary-compatible string and support reuse of memory
+			bool Get(string key, string &buffer)
+			{
+				bool result	= false;
+				auto reply	= this->GetBinary(key);
+
+				if (reply)
+				{
+					buffer.assign(reply->str, reply->len);
+					result = true;
+
+					freeReplyObject(reply);
+				}
+
+				return result;
+			}
+
+
 			template <typename T> bool Set(string key, Buffer<T> &buffer)
 			{
 				static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");

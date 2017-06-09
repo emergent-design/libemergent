@@ -66,18 +66,19 @@ namespace emergent
 			virtual ~ImageBase() {}
 
 
-			//The depth of this image is retained.
+			/// Assignment override
 			ImageBase<T> &operator=(const ImageBase<T> &image)
 			{
+				this->depth = image.depth;
 				this->Copy(image);
 				return *this;
 			}
 
 
-			/// Assignment override with type conversion. The depth of this
-			/// image is retained.
+			/// Assignment override with type conversion.
 			template <class U> ImageBase<T> &operator=(const ImageBase<U> &image)
 			{
+				this->depth = image.depth;
 				this->Copy(image);
 				return *this;
 			}

@@ -31,7 +31,7 @@ namespace emergent
 			}
 
 
-			/// Assignment override with type conversion
+			/// Assignment override with type and depth conversion
 			template <class U> Image<T, D> &operator=(const ImageBase<U> &image)
 			{
 				this->Copy(image);
