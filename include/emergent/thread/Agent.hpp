@@ -47,7 +47,8 @@ namespace emergent
 			{
 				if (this->run)
 				{
-					this->run = false;
+					this->run 			= false;
+					this->allowExecute	= false;
 					this->condition.notify_one();
 					this->thread.join();
 				}
@@ -94,9 +95,11 @@ namespace emergent
 			// Thread-safe execution of function on the subject and guarantees
 			// that the thread is not in the process of polling. If the action
 			// returns true then the thread is awoken to perform the next poll.
+			// It can only be used in Blocking and Timeout modes and will not
+			// perform the action if this agent is in Sleep or Interval mode.
 			void Execute(std::function<bool(T*)> action)
 			{
-				if (this->subject)
+				if (this->subject && this->allowExecute)
 				{
 					this->cs.lock();
 						auto result = action(this->subject.get());
@@ -159,6 +162,7 @@ namespace emergent
 			{
 				std::unique_lock<std::mutex> lock(this->cs);
 
+				this->allowExecute = true;
 				this->subject->OnEntry();
 
 				while (this->run)
@@ -175,6 +179,7 @@ namespace emergent
 			{
 				std::unique_lock<std::mutex> lock(this->cs);
 
+				this->allowExecute = true;
 				this->subject->OnEntry();
 
 				while (this->run)
@@ -187,6 +192,7 @@ namespace emergent
 			}
 
 
+			bool allowExecute = false;
 			std::chrono::microseconds duration { 1000 };
 			std::unique_ptr<T> subject;
 			std::condition_variable condition;
