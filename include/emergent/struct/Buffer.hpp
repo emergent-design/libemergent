@@ -244,13 +244,16 @@ namespace emergent
 
 
 			/// Save the buffer to binary file
-			bool Save(std::string path)
+			bool Save(std::string path, bool raw = false)
 			{
 				std::ofstream ofs(path, std::ios::out | std::ios::binary);
 
 				if (ofs.good())
 				{
-					ofs.put((char)sizeof(T));
+					if (!raw)
+					{
+						ofs.put((char)sizeof(T));
+					}
 					ofs.write((char *)this->data, this->size * sizeof(T));
 					ofs.flush();
 
