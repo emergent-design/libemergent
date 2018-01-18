@@ -1,0 +1,11 @@
+stages:
+  - build
+
+xenial-package:
+  image: emergent:xenial
+  stage: build
+  script:
+    - premake5 gmake
+    - make -j4
+    - cd packages
+    - ./build

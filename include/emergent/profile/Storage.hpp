@@ -59,10 +59,14 @@ namespace emergent
 
 				virtual void Store(Aggregation &aggregation)
 				{
-					this->cache.Set(
-						"profile:" + aggregation.id,
+					this->cache.HashSet(
+						"profiles", aggregation.id,
 						ent::entity::encode<ent::json>(aggregation)
 					);
+					// this->cache.Set(
+					// 	"profile:" + aggregation.id,
+					// 	ent::entity::encode<ent::json>(aggregation)
+					// );
 				}
 
 

@@ -18,7 +18,8 @@ namespace emergent
 {
 	/// A helper class for dealing with paths. It is based on the boost implementation
 	/// although it only contains the Linux backend at this time and is therefore the
-	/// only part of the libemergent that is not entirely cross-platform yet.
+	/// only part of the libemergent that is not entirely cross-platform yet. Now
+	/// deprecated in favour of using std::filesystem.
 	struct Path
 	{
 		#ifdef __linux
