@@ -4,7 +4,8 @@ stages:
 build-check:
   image: emergent:xenial
   stage: build
-  only: master
+  only:
+    - master
   script:
     - premake5 gmake
     - make -j4
@@ -12,7 +13,8 @@ build-check:
 package-xenial:
   image: emergent:xenial
   stage: build
-  only: tags
+  only:
+    - tags
   script:
     - cd packages
     - ./build
