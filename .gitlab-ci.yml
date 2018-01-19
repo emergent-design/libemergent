@@ -1,11 +1,23 @@
 stages:
   - build
 
-xenial-package:
+build-check:
   image: emergent:xenial
   stage: build
+  only: master
   script:
     - premake5 gmake
     - make -j4
+
+package-xenial:
+  image: emergent:xenial
+  stage: build
+  only: tags
+  script:
     - cd packages
     - ./build
+    - mkdir -p /packages/xenial/oss/
+    - cp libemergent-dev_*.deb /packages/xenial/oss/libemergent-dev.deb
+  artifacts:
+    paths:
+      - packages/*.deb

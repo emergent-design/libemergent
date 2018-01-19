@@ -1,6 +1,6 @@
 solution "emergent"
 	language 		"C++"
-	flags			"Symbols"
+	symbols			"On"
 	configurations	"default"
 	platforms		"native"
 	toolset			"clang"
