@@ -6,14 +6,11 @@
 #include <emergent/String.hpp>
 
 
-/// When dealing with binary data and images the unsigned char type is
-/// heavily used and byte is much easier to type. It really should be
-/// a default typedef in C++.
-typedef unsigned char byte;
-
-
 namespace emergent
 {
+	/// For dealing with binary data and images
+	typedef uint8_t byte;
+
 	/// Simple event definition, passes an integer status and expects a bool in return
 	typedef std::function<bool(int)> event;
 }

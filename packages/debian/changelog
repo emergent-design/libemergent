@@ -1,3 +1,9 @@
+libemergent0 (0.0.11) unstable; urgency=medium
+
+  * Moved the byte typedef inside the namespace to avoid future issues with C++17.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Thu, 08 Mar 2018 14:47:42 +0000
+
 libemergent0 (0.0.10) unstable; urgency=medium
 
   * Faster (but slightly less safe) string formatting.

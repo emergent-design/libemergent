@@ -344,9 +344,9 @@ namespace emergent
 
 /// Allows a buffer to be passed to cout. If the buffer contains byte
 /// data then it is output as hex.
-template <class T> std::ostream &operator << (std::ostream &output, const emergent::Buffer<T> &b)
+template <class T> std::ostream &operator << (std::ostream &output, const emg::Buffer<T> &b)
 {
-	if (std::is_same<T, byte>::value)
+	if (std::is_same<T, emg::byte>::value)
 	{
 		output << std::hex << std::setfill('0');
 		for (int i=0; i<b.Size(); i++) output << std::setw(2) << (int)b[i] << " ";
