@@ -35,7 +35,7 @@ namespace emergent
 
 				virtual void Store(Aggregation &aggregation)
 				{
-					std::cout << ent::entity::encode<ent::prettyjson>(aggregation) << std::endl;
+					std::cout << ent::encode<ent::prettyjson>(aggregation) << std::endl;
 				}
 		};
 
@@ -61,7 +61,7 @@ namespace emergent
 				{
 					this->cache.HashSet(
 						"profiles", aggregation.id,
-						ent::entity::encode<ent::json>(aggregation)
+						ent::encode<ent::json>(aggregation)
 					);
 					// this->cache.Set(
 					// 	"profile:" + aggregation.id,
@@ -100,7 +100,7 @@ namespace emergent
 				{
 					String::save(
 						directory / String::format("profile_%s.json", aggregation.id),
-						ent::entity::encode<ent::json>(aggregation)
+						ent::encode<ent::json>(aggregation)
 					);
 				}
 

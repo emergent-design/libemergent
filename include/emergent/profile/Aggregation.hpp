@@ -8,7 +8,7 @@ namespace emergent
 	namespace profile
 	{
 		/// Running tallies and the final results for a single profiling point.
-		struct AggregateStatistics : ent::entity
+		struct AggregateStatistics
 		{
 			long mean 		= 0;
 			long stddev		= 0;
@@ -48,15 +48,12 @@ namespace emergent
 			}
 
 
-			ent::mapping describe()
-			{
-				return { eref(mean), eref(stddev), eref(minimum), eref(maximum), eref(samples) };
-			}
+			emap(eref(mean), eref(stddev), eref(minimum), eref(maximum), eref(samples))
 		};
 
 
 		/// Contains all of the results for this process.
-		struct Aggregation : ent::entity
+		struct Aggregation
 		{
 			// The unique ID for this process that the Aggregator was initialised with
 			std::string id;
@@ -83,7 +80,7 @@ namespace emergent
 			}
 
 
-			ent::mapping describe() { return { eref(id), eref(statistics) }; }
+			emap(eref(id), eref(statistics))
 		};
 	}
 }
