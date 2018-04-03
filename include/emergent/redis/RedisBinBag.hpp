@@ -18,7 +18,7 @@ namespace redis
 
 
 			// To retrieve a binary-compatible string and support reuse of memory
-			bool Get(string key, string &buffer)
+			bool Get(const string &key, string &buffer)
 			{
 				bool result	= false;
 				auto reply	= this->GetBinary(key);
@@ -35,7 +35,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Set(string key, Buffer<T> &buffer)
+			template <typename T> bool Set(const string &key, Buffer<T> &buffer)
 			{
 				static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");
 
@@ -43,7 +43,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Get(string key, Buffer<T> &buffer)
+			template <typename T> bool Get(const string &key, Buffer<T> &buffer)
 			{
 				static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");
 
@@ -66,7 +66,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Set(string key, std::vector<T> &buffer)
+			template <typename T> bool Set(const string &key, std::vector<T> &buffer)
 			{
 				static_assert(std::is_arithmetic<T>::value, "Vector type must be numeric");
 
@@ -74,7 +74,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Get(string key, std::vector<T> &buffer)
+			template <typename T> bool Get(const string &key, std::vector<T> &buffer)
 			{
 				static_assert(std::is_arithmetic<T>::value, "Vector type must be numeric");
 
@@ -98,7 +98,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Set(string key, ImageBase<T> &image)
+			template <typename T> bool Set(const string &key, ImageBase<T> &image)
 			{
 				ImageHeader header = { image.Depth(), sizeof(T), (uint16_t)image.Width(), (uint16_t)image.Height() };
 
@@ -106,7 +106,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Get(string key, ImageBase<T> &image)
+			template <typename T> bool Get(const string &key, ImageBase<T> &image)
 			{
 				ImageHeader h;
 				auto reply	= this->GetBinary(key);
@@ -133,7 +133,7 @@ namespace redis
 			}
 
 
-			template <typename T> long Publish(string channel, ImageBase<T> &image)
+			template <typename T> long Publish(const string &channel, ImageBase<T> &image)
 			{
 				ImageHeader header = { image.Depth(), sizeof(T), (uint16_t)image.Width(), (uint16_t)image.Height() };
 
@@ -143,7 +143,7 @@ namespace redis
 
 		protected:
 
-			redisReply *GetBinary(string key)
+			redisReply *GetBinary(const string &key)
 			{
 				auto reply = this->InvokeCommand("GET %s", key.c_str());
 

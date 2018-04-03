@@ -49,7 +49,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			virtual void Resize(int width, int height, byte depth = 0)
+			void Resize(int width, int height, byte depth = 0) override
 			{
 				if (depth && depth != D)
 				{
@@ -64,7 +64,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			virtual bool Load(std::string path, byte depth = 0)
+			bool Load(std::string path, byte depth = 0) override
 			{
 				if (depth && depth != D)
 				{
@@ -79,7 +79,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			virtual bool Load(Buffer<byte> &buffer, byte depth = 0)
+			bool Load(Buffer<byte> &buffer, byte depth = 0) override
 			{
 				if (depth && depth != D)
 				{
@@ -94,7 +94,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			virtual bool LoadRaw(std::string path)
+			bool LoadRaw(std::string path) override
 			{
 				return ImageBase<T>::LoadRaw(path, true);
 			}

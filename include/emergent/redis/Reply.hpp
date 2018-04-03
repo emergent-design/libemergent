@@ -90,9 +90,11 @@ namespace redis
 			}
 
 
-			string AsString(string defaultValue = "")
+			string AsString(const string &defaultValue = "")
 			{
-				return this->reply && this->reply->type == REDIS_REPLY_STRING ? this->reply->str : defaultValue;
+				return this->reply && this->reply->type == REDIS_REPLY_STRING
+					? string(this->reply->str, this->reply->len)
+					: defaultValue;
 			}
 
 

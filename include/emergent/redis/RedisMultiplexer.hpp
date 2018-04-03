@@ -38,7 +38,7 @@ namespace redis
 			}
 
 
-			virtual bool Initialise(bool socket = false, string connection = "127.0.0.1", int port = 6379)
+			bool Initialise(bool socket = false, const string &connection = "127.0.0.1", int port = 6379) override
 			{
 				if (!this->run)
 				{
@@ -76,7 +76,7 @@ namespace redis
 			};
 
 
-			virtual redisReply *InvokeCommandV(const char *command, va_list &arguments)
+			redisReply *InvokeCommandV(const char *command, va_list &arguments) override
 			{
 				int result			= REDIS_ERR;
 				auto expectation	= std::make_shared<Expectation>();
