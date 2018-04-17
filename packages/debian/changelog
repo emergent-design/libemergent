@@ -1,3 +1,11 @@
+libemergent0 (0.0.12) unstable; urgency=medium
+
+  * Updated profiler to match changes in libentity.
+  * Redis class now uses const string references.
+  * Redis value strings (not keys) are now binary safe.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Tue, 17 Apr 2018 22:42:49 +0100
+
 libemergent0 (0.0.11) unstable; urgency=medium
 
   * Moved the byte typedef inside the namespace to avoid future issues with C++17.
