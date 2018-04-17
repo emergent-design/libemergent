@@ -3,6 +3,7 @@
 #include <emergent/logger/Logger.hpp>
 #include <hiredis/adapters/libev.h>
 #include <hiredis/async.h>
+#include <functional>
 #include <algorithm>
 #include <string.h>
 #include <ev.h>

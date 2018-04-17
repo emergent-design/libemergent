@@ -11,7 +11,8 @@ build-check:
     - premake5 gmake
     - make -j4
 
-package-xenial:
+# Header-only library so package is the same for each distribution
+package-all:
   image: emergent:xenial
   stage: build
   only:
@@ -20,7 +21,9 @@ package-xenial:
     - cd packages
     - ./build
     - mkdir -p /packages/xenial/oss/
+    - mkdir -p /packages/bionic/oss/
     - cp libemergent-dev_*.deb /packages/xenial/oss/libemergent-dev.deb
+    - cp libemergent-dev_*.deb /packages/bionic/oss/libemergent-dev.deb
   artifacts:
     paths:
       - packages/*.deb
@@ -32,7 +35,7 @@ deploy-packages:
   only:
     - tags
   dependencies:
-    - package-xenial
+    - package-all
   before_script:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
