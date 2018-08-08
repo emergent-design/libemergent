@@ -201,7 +201,7 @@ namespace redis
 
 				if (this->context->err)
 				{
-					Log::Error("Failed to connect to redis: %s", this->context->errstr);
+					Log::Error("Failed to connect to redis at %s: %s", this->connection, this->context->errstr);
 					redisFree(this->context);
 					this->context = nullptr;
 
