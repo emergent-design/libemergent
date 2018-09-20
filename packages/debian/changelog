@@ -1,3 +1,9 @@
+libemergent0 (0.0.14) unstable; urgency=medium
+
+  * Modified the broadcast function to use const string references for better performance.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Thu, 20 Sep 2018 13:15:31 +0100
+
 libemergent0 (0.0.13) unstable; urgency=medium
 
   * Added Bit & Bitfield helper templates for unions.

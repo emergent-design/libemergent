@@ -13,8 +13,16 @@
 namespace emergent {
 namespace redis
 {
+	// #ifdef __cpp_lib_string_view
+	// 	#include <string_view>
+	// 	typedef std::function<void(std::string_view channel, std::string_view)> broadcast;
+	// #else
+	// 	typedef std::function<void(string channel, string message)> broadcast;
+	// #endif
+
+	typedef std::function<void(const string &channel, const string &message)> broadcast;
+
 	using std::string;
-	typedef std::function<void(string channel, string message)> broadcast;
 
 
 	struct Channel
@@ -130,11 +138,19 @@ namespace redis
 					{
 						if (r->elements == 3 && strcmp(r->element[0]->str, "message") == 0)
 						{
-							((Subscription *)c->data)->onMessage(r->element[1]->str, std::string(r->element[2]->str, r->element[2]->len));
+							// #ifdef __cpp_lib_string_view
+							// 	((Subscription *)c->data)->onMessage(r->element[1]->str, std::string_view(r->element[2]->str, r->element[2]->len));
+							// #else
+								((Subscription *)c->data)->onMessage(r->element[1]->str, std::string(r->element[2]->str, r->element[2]->len));
+							// #endif
 						}
 						else if (r->elements == 4 && strcmp(r->element[0]->str, "pmessage") == 0)
 						{
-							((Subscription *)c->data)->onMessage(r->element[2]->str, std::string(r->element[3]->str, r->element[3]->len));
+							// #ifdef __cpp_lib_string_view
+							// 	((Subscription *)c->data)->onMessage(r->element[2]->str, std::string_view(r->element[3]->str, r->element[3]->len));
+							// #else
+								((Subscription *)c->data)->onMessage(r->element[2]->str, std::string(r->element[3]->str, r->element[3]->len));
+							// #endif
 						}
 					}
 				}

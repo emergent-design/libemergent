@@ -75,6 +75,26 @@ namespace emergent
 				return result;
 			}
 
+			#ifdef __cpp_lib_string_view
+				#include <string_view>
+				static std::vector<std::string_view> explode(std::string_view text, std::string_view delimiters)
+				{
+					int last = 0;
+					int size = text.length();
+					std::vector<std::string_view> result;
+
+					for (int i=0; i>=0; last = i + 1)
+					{
+						i = text.find_first_of(delimiters, last);
+
+						if (i > last)					result.emplace_back(text.data() + last, i - last);
+						else if (i < 0 && last < size)	result.emplace_back(text.data() + last, size - last);
+					}
+
+					return result;
+				}
+			#endif
+
 
 			/// Change a string to lowercase (transforms the string that is passed in).
 			static const string lowercase(string text)
