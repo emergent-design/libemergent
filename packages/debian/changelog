@@ -1,3 +1,9 @@
+libemergent0 (0.0.15) unstable; urgency=medium
+
+  * Added Dependencies from the libniven project.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Fri, 21 Sep 2018 11:08:08 +0100
+
 libemergent0 (0.0.14) unstable; urgency=medium
 
   * Modified the broadcast function to use const string references for better performance.
