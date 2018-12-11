@@ -104,6 +104,14 @@ namespace emergent
 			}
 
 
+			// Return the closest even integer. If the supplied value is an odd integer then the
+			// even value above it is returned.
+			template <typename T> static constexpr long even(T value) noexcept
+			{
+				return (long)value + ((long)value % 2);
+			}
+
+
 			// Calculate the average value between two percentiles of a histogram.
 			// The lower and upper parameters define the interpercentile range; valid values are
 			// between 0.0 and 1.0 inclusive.
