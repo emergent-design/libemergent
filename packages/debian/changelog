@@ -1,3 +1,10 @@
+libemergent0 (0.0.16) unstable; urgency=medium
+
+  * Added a Latch helper class - works as a latching bool.
+  * Implemented an "even" method in Maths returning the nearest even integer for a given value.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Fri, 14 Dec 2018 12:09:19 +0000
+
 libemergent0 (0.0.15) unstable; urgency=medium
 
   * Added Dependencies from the libniven project.
