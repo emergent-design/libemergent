@@ -1,44 +1,11 @@
 #pragma once
 
-#include <atomic>
-#include <thread>
-#include <mutex>
 #include <queue>
-#include <future>
-#include <functional>
-#include <condition_variable>
+#include <emergent/thread/Persistent.hpp>
 
 
 namespace emergent
 {
-	namespace internal
-	{
-		// A base class allows the thread pool to queue tasks of arbitrary return type.
-		struct TaskBase { virtual void Run() = 0; };
-
-		// Task is separated out from the ThreadPool class since it requires
-		// a specialisation to handle the "void" case for promise.
-		template <typename T> struct Task : public TaskBase
-		{
-			std::promise<T> promise;
-			std::function<T()> job;
-
-			Task(std::function<T()> &&job) : job(std::move(job)) {}
-
-			inline void Run()
-			{
-				this->promise.set_value(this->job());
-			}
-		};
-
-		template <> inline void Task<void>::Run()
-		{
-			this->job();
-			this->promise.set_value();
-		}
-	}
-
-
 	// A simple thread pool implementation. The size of the pool is determined
 	// by the first template argument.
 	template <std::size_t N> class ThreadPool
@@ -60,7 +27,7 @@ namespace emergent
 						{
 							for (auto &t : this->threads)
 							{
-								if (!t.task)
+								if (t.Ready())
 								{
 									t.Assign(this->queue.front());
 									this->queue.pop();
@@ -101,7 +68,7 @@ namespace emergent
 
 				if (this->queue.size() < QUEUE_MAX)
 				{
-					 auto task = std::make_shared<internal::Task<decltype(job())>>(std::move(job));
+					auto task = std::make_shared<internal::Task<decltype(job())>>(std::move(job));
 
 					this->queue.push(task);
 					this->condition.notify_one();
@@ -115,67 +82,6 @@ namespace emergent
 
 		private:
 
-			// Helper responsible for a single thread in the pool.
-			struct Thread
-			{
-				std::mutex cs;
-				std::thread thread;
-				std::condition_variable condition;
-				std::shared_ptr<internal::TaskBase> task;
-				bool run = false;
-
-				Thread()
-				{
-					using namespace std::chrono;
-
-					this->thread = std::thread([&]{
-
-						std::unique_lock<std::mutex> lock(this->cs);
-
-						this->run = true;
-
-						while (this->run)
-						{
-							if (this->task)
-							{
-								this->task->Run();
-								this->task = nullptr;
-							}
-
-							this->condition.wait(lock);
-						}
-					});
-
-					// Wait until the thread has control of the mutex
-					while (!this->run)
-					{
-						std::this_thread::sleep_for(1us);
-					}
-				}
-
-
-				~Thread()
-				{
-					this->cs.lock();
-						this->run = false;
-					this->cs.unlock();
-					this->condition.notify_one();
-					this->thread.join();
-
-				}
-
-
-				// Assign a task to this thread and wake it up.
-				void Assign(std::shared_ptr<internal::TaskBase> task)
-				{
-					this->cs.lock();
-						this->task = task;
-					this->cs.unlock();
-					this->condition.notify_one();
-				}
-			};
-
-
 			// Maximum queue size
 			static const int QUEUE_MAX = 1024;
 
@@ -186,7 +92,7 @@ namespace emergent
 			bool run = true;
 
 			// The pool of threads
-			std::array<Thread, N> threads;
+			std::array<PersistentThread, N> threads;
 
 			// The queue of tasks to be executed
 			std::queue<std::shared_ptr<internal::TaskBase>> queue;
