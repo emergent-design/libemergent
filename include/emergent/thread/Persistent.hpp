@@ -66,7 +66,7 @@ namespace emergent
 				// Wait until the thread has control of the mutex
 				while (!this->run)
 				{
-					std::this_thread::sleep_for(1us);
+					std::this_thread::sleep_for(microseconds(1));
 				}
 			}
 
