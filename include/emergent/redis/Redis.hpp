@@ -125,21 +125,27 @@ namespace redis
 
 			// Sorted Sets
 			bool SortedAdd(const string &key, const string &member, double score = 0.0)								{ return Command("ZADD %s %g %b", key.c_str(), score, member.data(), (size_t)member.size()).AsBool(); }
+			bool SortedAdd(const string &key, const string &member, long score = 0)									{ return Command("ZADD %s %ld %b", key.c_str(), score, member.data(), (size_t)member.size()).AsBool(); }
 			long SortedCardinality(const string &key)																{ return Command("ZCARD %s", key.c_str()).AsLong(); }
 			long SortedCount(const string &key, double min, double max)												{ return Command("ZCOUNT %s %g %g", key.c_str(), min, max).AsLong(); }
+			long SortedCount(const string &key, long min, long max)													{ return Command("ZCOUNT %s %ld %ld", key.c_str(), min, max).AsLong(); }
 			double SortedIncrement(const string &key, double increment, const string &member)						{ return Command("ZINCRBY %s %g %b", key.c_str(), increment, member.data(), (size_t)member.size()).AsDouble(); }
+			double SortedIncrement(const string &key, long increment, const string &member)							{ return Command("ZINCRBY %s %ld %b", key.c_str(), increment, member.data(), (size_t)member.size()).AsDouble(); }
 			long SortedLexCount(const string &key, const string &min = "-", const string &max = "+")				{ return Command("ZLEXCOUNT %s %s %s", key.c_str(), min.c_str(), max.c_str()).AsLong(); }
 			vector<string> SortedRange(const string &key, long start, long stop)									{ return Command("ZRANGE %s %ld %ld", key.c_str(), start, stop).AsStringArray(); }
 			vector<string> SortedRangeByLex(const string &key, const string &min = "-", const string &max = "+")	{ return Command("ZRANGEBYLEX %s %s %s", key.c_str(), min.c_str(), max.c_str()).AsStringArray(); }
 			vector<string> SortedRangeByScore(const string &key, double min, double max)							{ return Command("ZRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsStringArray(); }
+			vector<string> SortedRangeByScore(const string &key, long min, long max)								{ return Command("ZRANGEBYSCORE %s %ld %ld", key.c_str(), min, max).AsStringArray(); }
 			long SortedRank(const string &key, const string &member)												{ return Command("ZRANK %s %b", key.c_str(), member.data(), (size_t)member.size()).AsLong(); }
 			bool SortedRemove(const string &key, const string &member)												{ return Command("ZREM %s %b", key.c_str(), member.data(), (size_t)member.size()).AsBool(); }
 			long SortedRemoveByLex(const string &key, const string &min, const string &max)							{ return Command("ZREMRANGEBYLEX %s %s %s", key.c_str(), min.c_str(), max.c_str()).AsLong(); }
 			long SortedRemoveByRank(const string &key, long start, long stop)										{ return Command("ZREMRANGEBYRANK %s %ld %ld", key.c_str(), start, stop).AsLong(); }
 			long SortedRemoveByScore(const string &key, double min, double max)										{ return Command("ZREMRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsLong(); }
+			long SortedRemoveByScore(const string &key, long min, long max)											{ return Command("ZREMRANGEBYSCORE %s %ld %ld", key.c_str(), min, max).AsLong(); }
 			vector<string> SortedRevRange(const string &key, long start, long stop)									{ return Command("ZREVRANGE %s %ld %ld", key.c_str(), start, stop).AsStringArray(); }
 			vector<string> SortedRevRangeByLex(const string &key, const string &max = "+", const string &min = "-")	{ return Command("ZREVRANGEBYLEX %s %s %s", key.c_str(), max.c_str(), min.c_str()).AsStringArray(); }
 			vector<string> SortedRevRangeByScore(const string &key, double min, double max)							{ return Command("ZREVRANGEBYSCORE %s %g %g", key.c_str(), min, max).AsStringArray(); }
+			vector<string> SortedRevRangeByScore(const string &key, long min, long max)								{ return Command("ZREVRANGEBYSCORE %s %ld %ld", key.c_str(), min, max).AsStringArray(); }
 			long SortedRevRank(const string &key, const string &member)												{ return Command("ZREVRANK %s %b", key.c_str(), member.data(), (size_t)member.size()).AsLong(); }
 			double SortedScore(const string &key, const string &member)												{ return Command("ZSCORE %s %b", key.c_str(), member.data(), (size_t)member.size()).AsDouble(); }
 			pair<long, map<string, string>> SortedScan(const string &key, long cursor)								{ return Command("ZSCAN %s %ld", key.c_str(), cursor).AsScanMap(); }
