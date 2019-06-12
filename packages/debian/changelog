@@ -1,3 +1,9 @@
+libemergent0 (0.0.19) unstable; urgency=medium
+
+  * Added integer scores for sorted sets
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 12 Jun 2019 15:41:49 +0100
+
 libemergent0 (0.0.18) unstable; urgency=medium
 
   * Fix for mingw build
