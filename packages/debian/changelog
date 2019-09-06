@@ -1,3 +1,9 @@
+libemergent0 (0.0.20) unstable; urgency=medium
+
+  * Added an Inspect helper function for ImageBase
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Fri, 06 Sep 2019 14:45:54 +0100
+
 libemergent0 (0.0.19) unstable; urgency=medium
 
   * Added integer scores for sorted sets
