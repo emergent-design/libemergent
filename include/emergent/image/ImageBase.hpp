@@ -206,6 +206,30 @@ namespace emergent
 			}
 
 
+			// Apply an operation to inspect a given region of the image. The region must be fully
+			// contained within the image and if it is invalid then `operation` will not be invoked.
+			void Inspect(int rx, int ry, int rw, int rh, std::function<void(const T*)> operation) const
+			{
+				if (rx < 0 || rx+rw > this->width || ry < 0 || ry+rh > this->height)
+				{
+					return;
+				}
+
+				int x, y;
+				const int depth = this->depth;
+				const int jump	= (this->width - rw) * depth;
+				T *pb			= this->buffer + (this->width * ry + rx) * depth;
+
+				for (y=0; y<rh; y++, pb+=jump)
+				{
+					for (x=0; x<rw; x++, pb+=depth)
+					{
+						operation(pb);
+					}
+				}
+			}
+
+
 			/// Truncate the height of the image down to the given height. Since this just requires
 			/// a change of the height value and a cut of the buffer it allows you to chop the
 			/// bottom off of an image without needing to use an additional image buffer.
