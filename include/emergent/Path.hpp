@@ -20,7 +20,7 @@ namespace emergent
 	/// although it only contains the Linux backend at this time and is therefore the
 	/// only part of the libemergent that is not entirely cross-platform yet. Now
 	/// deprecated in favour of using std::filesystem.
-	struct Path
+	struct [[deprecated("should use std::filesystem::path instead")]] Path
 	{
 		#ifdef __linux
 			static const char SEPARATOR = '/';

@@ -13,13 +13,13 @@ namespace emergent
 		public:
 
 			// Returns the number of milliseconds that have elapsed since construction or reset.
-			long Elapsed()
+			long Elapsed() const
 			{
 				return duration_cast<milliseconds>(steady_clock::now() - this->time).count();
 			}
 
 			// Returns the number of microseconds that have elapsed since construction or reset.
-			long MicroElapsed()
+			long MicroElapsed() const
 			{
 				return duration_cast<microseconds>(steady_clock::now() - this->time).count();
 			}
