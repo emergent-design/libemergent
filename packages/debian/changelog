@@ -1,3 +1,10 @@
+libemergent0 (0.0.21) unstable; urgency=medium
+
+  * Deprecation of Path - should be using std::filesystem now.
+  * Timer elapsed functions now const.
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 16 Oct 2019 11:19:49 +0100
+
 libemergent0 (0.0.20) unstable; urgency=medium
 
   * Added an Inspect helper function for ImageBase
