@@ -249,7 +249,12 @@ namespace emergent
 
 					if (item.size() > 1 && item[0] == '-')
 					{
-						if (item[1] == '-')
+						if (std::isdigit(item[1]))
+						{
+							// This is a negative number value not an option
+							items.emplace_back(item, false);
+						}
+						else if (item[1] == '-')
 						{
 							auto v = item.find_first_of('=');
 
