@@ -147,16 +147,36 @@ namespace emergent
 				using namespace std::chrono;
 
 				Item item;
+				Item last;
+				int count = 0;
 
 				while (this->run)
 				{
 					// Only sleep if there is nothing in the queue
 					if (this->queue.try_dequeue(item))
 					{
-						for (auto &sink : this->sinks)
+						if (item.message == last.message)
 						{
-							sink->Write(item.severity, item.message);
+							count++;
 						}
+						else
+						{
+							for (auto &sink : this->sinks)
+							{
+								if (count)
+								{
+									sink->Write(
+										last.severity,
+										String::format("last message repeated %d times", count)
+									);
+								}
+								sink->Write(item.severity, item.message);
+							}
+
+							last	= item;
+							count	= 0;
+						}
+
 					}
 					else std::this_thread::sleep_for(milliseconds(10));
 				}
