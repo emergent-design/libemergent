@@ -1,7 +1,6 @@
 #pragma once
 
 #include <emergent/Emergent.hpp>
-#include <emergent/thread/Pool.hpp>
 #include <emergent/logger/Logger.hpp>
 
 #include <memory>
@@ -19,25 +18,33 @@
 namespace emergent {
 namespace usock
 {
-
-	template <std::size_t THREADS = 0> class Server
+	// A multi-threaded unix socket implementation. Each connection is assumed to be
+	// long-lived and so threads are created when a connection is established.
+	template <std::size_t CONNECTIONS = 64> class Server
 	{
 		public:
 
+			Server()
+			{
+				this->run = false;
+			}
 
-			// void OnMessage(std::function<bool(const std::vector<byte>&, std::vector<byte>&)> &&handler)
+
 			void OnMessage(std::function<bool(const std::string&, std::string&)> &&handler)
 			{
 				this->onMessage = std::move(handler);
 			}
 
 
-			bool Initialise(const std::string path, int maxConnections = 1024, int backlog = 32)
+			bool Initialise(const std::string path, int backlog = 32)
 			{
-				std::lock_guard<std::mutex> lock(this->cs);
+				if (this->run)
+				{
+					// Should only initialise once
+					return false;
+				}
 
-				this->Dispose();
-				this->watchlist.assign(maxConnections + 1, { -1, 0, 0 });
+				this->watchlist.fill({ -1, 0, 0 });
 
 				auto &primary	= this->watchlist[0];
 				primary.fd		= socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -56,102 +63,129 @@ namespace usock
 						if (listen(primary.fd, backlog) == 0)
 						{
 							Log::Info("usock::Server listening at %s", path);
-							this->used = 1;
+
+							this->used			= 1;
+							this->run			= true;
+							this->threads[0]	= std::thread(&Server::Entry, this);
+
 							return true;
 						}
+						else Log::Error("usock::Server failed to initiate socket listen");
 					}
+					else Log::Error("usock::Server failed to bind socket");
 
 					close(primary.fd);
 					primary.fd = -1;
 				}
+				else Log::Error("usock::Server failed to open socket");
 
 				return false;
 			}
 
 
-
-			void Poll(int timeout)
-			{
-				this->cs.lock();
-					int rc = poll(this->watchlist.data(), this->used, timeout);
-				this->cs.unlock();
-
-				if (rc < 0)
-				{
-					Log::Error("usock::Server poll error: %s", strerror(errno));
-					return;
-				}
-
-				if (!rc) return;
-
-				int primary = this->watchlist[0].fd;
-
-				for (auto &w : this->watchlist)
-				{
-					if (w.fd < 0) continue;
-
-					if (w.revents & POLLHUP)
-					{
-						this->Close(&w);
-					}
-					else if (w.revents & POLLIN)
-					{
-						if (w.fd == primary)
-						{
-							this->Add(accept4(primary, nullptr, nullptr, 0));
-						}
-						else if (THREADS)
-						{
-							// Ignore events for this client while it is being handled by a thread.
-							w.events = 0;
-							this->pool.Run(std::bind(&Server::Read, this, &w));
-						}
-						else
-						{
-							this->Read(&w);
-						}
-
-
-					}
-
-					w.revents = 0;
-				}
-			}
-
-
 			~Server()
 			{
-				this->Dispose();
+				this->run = false;
+
+				if (this->threads[0].joinable())
+				{
+					this->threads[0].join();
+				}
+
+				Log::Info("usock::Server exited");
 			}
 
 
 		private:
 
-			void Dispose()
+			void Entry()
 			{
-				for (auto &w : this->watchlist)
+				const int primary = this->watchlist[0].fd;
+
+				while (this->run)
 				{
-					if (w.fd >= 0) close(w.fd);
+					this->cs.lock();
+						int rc = poll(this->watchlist.data(), this->used, 1);
+					this->cs.unlock();
+
+					if (rc < 0)
+					{
+						Log::Error("usock::Server poll error: %s", strerror(errno));
+						this->run = false;
+					}
+					else if (rc)
+					{
+						for (auto &w : this->watchlist)
+						{
+							if (w.fd < 0) continue;
+
+							if (w.revents & POLLHUP)
+							{
+								this->Close(&w);
+							}
+							else if (w.revents & POLLIN && w.fd == primary)
+							{
+								this->Add(
+									accept(primary, nullptr, nullptr)
+								);
+							}
+
+							w.revents = 0;
+						}
+					}
 				}
 
-				this->watchlist.clear();
+				// Close any remaining connections and associated threads
+				for (int i=1; i<CONNECTIONS; i++)
+				{
+					if (this->watchlist[i].fd >= 0)
+					{
+						close(this->watchlist[i].fd);
+						this->watchlist[i].fd = -1;
+					}
+					if (this->threads[i].joinable())
+					{
+						this->threads[i].join();
+					}
+				}
+
+				close(primary);
+				this->watchlist[0].fd = -1;
 			}
 
 
 			void Add(int client)
 			{
-				std::lock_guard<std::mutex> lock(this->cs);
+				std::lock_guard lock(this->cs);
 
 				if (client != -1)
 				{
-					for (auto &w : this->watchlist)
+					// First watchlist item is the primary
+					for (int i=1; i<CONNECTIONS; i++)
 					{
-						if (w.fd < 0)
+						auto *watch = &this->watchlist[i];
+
+						if (watch->fd < 0)
 						{
+							if (this->threads[i].joinable())
+							{
+								this->threads[i].join();
+							}
+
 							Log::Info("usock::Server client %d connected", client);
 
-							w = { client, POLLIN, 0 };
-							this->Refresh();
+							// Do not monitor for POLLIN events since the thread will
+							// just block read repeatedly. The main thread will still
+							// see the POLLHUP event when the client disconnects.
+							*watch = { client, 0, 0 };
+
+							this->threads[i] = std::thread([watch, this] {
+								while (watch->fd >= 0)
+								{
+									this->Read(watch);
+								}
+							});
+
 							return;
 						}
 					}
@@ -165,15 +199,18 @@ namespace usock
 
 			bool Close(pollfd *client, int error = 0)
 			{
-				std::lock_guard<std::mutex> lock(this->cs);
+				std::lock_guard lock(this->cs);
 
-				close(client->fd);
+				if (client->fd >= 0)
+				{
+					close(client->fd);
 
-				if (error)	Log::Error("usock::Server client %d disconnected due to error: %s", client->fd, strerror(error));
-				else		Log::Info("usock::Server client %d disconnected", client->fd);
+					if (error)	Log::Error("usock::Server client %d disconnected due to error: %s", client->fd, strerror(error));
+					else		Log::Info("usock::Server client %d disconnected", client->fd);
 
-				client->fd = -1;
-				this->Refresh();
+					client->fd = -1;
+					this->Refresh();
+				}
 
 				return false;
 			}
@@ -183,10 +220,9 @@ namespace usock
 			// the last one that has been assigned
 			void Refresh()
 			{
-				int size 	= this->watchlist.size();
-				this->used	= 1;
+				this->used = 1;
 
-				for (int i=size-1; i>0; i--)
+				for (int i=CONNECTIONS-1; i>0; i--)
 				{
 					if (this->watchlist[i].fd >= 0)
 					{
@@ -199,8 +235,6 @@ namespace usock
 
 			bool Read(pollfd *client)
 			{
-				// static thread_local std::vector<byte> input(1024);
-				// static thread_local std::vector<byte> output(1024);
 				static thread_local std::string input(1024, '\0');
 				static thread_local std::string output(1024, '\0');
 
@@ -235,12 +269,10 @@ namespace usock
 					this->Write(client, output);
 				}
 
-				client->events = POLLIN;
 				return true;
 			}
 
 
-			// void Write(pollfd *client, std::vector<byte> &buffer)
 			void Write(pollfd *client, const std::string &buffer)
 			{
 				uint32_t size	= buffer.size();
@@ -269,16 +301,12 @@ namespace usock
 			}
 
 
-			// Time to wait (ms) when polling during a read/write.
-			static const int POLL_RW_WAIT = 100;
-
 			std::function<bool(const std::string&, std::string&)> onMessage;
 
-			std::vector<pollfd> watchlist;
-			int used = 0;
-
-			ThreadPool<THREADS> pool;
+			std::atomic<bool> run;
+			std::array<pollfd, CONNECTIONS> watchlist;
+			std::array<std::thread, CONNECTIONS> threads;
 			std::mutex cs;
+			int used = 0;
 	};
-
 }}

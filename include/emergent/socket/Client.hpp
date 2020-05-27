@@ -11,6 +11,7 @@
 namespace emergent {
 namespace usock
 {
+	// A simple unix socket client interface
 	class Client
 	{
 		public:
@@ -24,7 +25,6 @@ namespace usock
 			}
 
 
-			// bool Write(const std::vector<byte> &buffer)
 			bool Write(const std::string &buffer)
 			{
 				if (!this->Connect()) return false;
@@ -56,7 +56,6 @@ namespace usock
 			}
 
 
-			// bool Read(std::vector<byte> &buffer)
 			bool Read(std::string &buffer)
 			{
 				if (!this->Connect()) return false;
