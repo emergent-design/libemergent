@@ -1,3 +1,9 @@
+libemergent0 (0.0.24) unstable; urgency=medium
+
+  * Refactored unix socket server implementation. 
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 01 Jun 2020 10:51:02 +0100
+
 libemergent0 (0.0.23) unstable; urgency=medium
 
   * Added a std::filesystem helper header.
