@@ -69,6 +69,12 @@ namespace usock
 					return this->Close(errno);
 				}
 
+				if (size == 0)
+				{
+					buffer.clear();
+					return true;
+				}
+
 				buffer.resize(size);
 
 				while (total < size)

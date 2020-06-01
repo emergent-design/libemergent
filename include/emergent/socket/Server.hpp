@@ -205,17 +205,22 @@ namespace usock
 
 			bool Close(pollfd *client, int error = 0)
 			{
-				std::lock_guard lock(this->cs);
-
-				if (client->fd >= 0)
+				// Do not attempt closing the connection if the
+				// server is exiting
+				if (this->run)
 				{
-					close(client->fd);
+					std::lock_guard lock(this->cs);
 
-					if (error)	Log::Error("usock::Server client %d disconnected due to error: %s", client->fd, strerror(error));
-					else		Log::Info("usock::Server client %d disconnected", client->fd);
+					if (client->fd >= 0)
+					{
+						close(client->fd);
 
-					client->fd = -1;
-					this->Refresh();
+						if (error)	Log::Error("usock::Server client %d disconnected due to error: %s", client->fd, strerror(error));
+						else		Log::Info("usock::Server client %d disconnected", client->fd);
+
+						client->fd = -1;
+						this->Refresh();
+					}
 				}
 
 				return false;

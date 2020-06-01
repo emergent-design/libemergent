@@ -1,3 +1,10 @@
+libemergent0 (0.0.26) unstable; urgency=medium
+
+  * Handle zero length results properly ink usock::Client
+  * Avoid the mutex in Close() when shutting down the usock::Server
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 01 Jun 2020 21:54:45 +0100
+
 libemergent0 (0.0.25) unstable; urgency=medium
 
   * Patch to avoid blocking at recv() when exiting in usock::Server.
