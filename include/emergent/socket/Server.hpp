@@ -174,6 +174,12 @@ namespace usock
 
 							Log::Info("usock::Server client %d connected", client);
 
+							// Set a timeout for reads on this socket so that recv does
+							// not block indefinitely when the server is exiting with
+							// outstanding connections.
+							timeval tv = { 1, 0 };
+							setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(timeval));
+
 							// Do not monitor for POLLIN events since the thread will
 							// just block read repeatedly. The main thread will still
 							// see the POLLHUP event when the client disconnects.
@@ -243,8 +249,16 @@ namespace usock
 
 				int rc = recv(client->fd, &size, sizeof(uint32_t), 0);
 
+
 				if (rc != sizeof(uint32_t))
 				{
+					// The read timed out which is not actually an error since a receive
+					// timeout was configured for this connection
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					{
+						return false;
+					}
+
 					return this->Close(client, rc < 0 ? errno : 0);
 				}
 
