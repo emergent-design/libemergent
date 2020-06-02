@@ -95,7 +95,10 @@ namespace usock
 
 			~Client()
 			{
-				close(this->fd);
+				if (this->fd != -1)
+				{
+					close(this->fd);
+				}
 			}
 
 

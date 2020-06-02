@@ -2,6 +2,7 @@
 
 #include <emergent/Emergent.hpp>
 #include <emergent/logger/Logger.hpp>
+#include <emergent/thread/Persistent.hpp>
 
 #include <memory>
 #include <future>
@@ -18,8 +19,11 @@
 namespace emergent {
 namespace usock
 {
+	using namespace std::chrono_literals;
+
 	// A multi-threaded unix socket implementation. Each connection is assumed to be
-	// long-lived and so threads are created when a connection is established.
+	// long-lived and so a thread is allocated to manage the read/write cycle of a
+	// single connection.
 	template <std::size_t CONNECTIONS = 64> class Server
 	{
 		public:
@@ -66,7 +70,7 @@ namespace usock
 
 							this->used			= 1;
 							this->run			= true;
-							this->threads[0]	= std::thread(&Server::Entry, this);
+							this->threads[0].Run(std::bind(&Server::Entry, this));
 
 							return true;
 						}
@@ -87,12 +91,16 @@ namespace usock
 			{
 				this->run = false;
 
-				if (this->threads[0].joinable())
-				{
-					this->threads[0].join();
-				}
+				Log::Info("usock::Server waiting for threads to finish");
 
-				Log::Info("usock::Server exited");
+				while (std::any_of(
+					this->threads.begin(),
+					this->threads.end(),
+					[](auto &t) { return !t.Ready(); }
+				))
+				{
+					std::this_thread::sleep_for(10ms);
+				}
 			}
 
 
@@ -104,9 +112,7 @@ namespace usock
 
 				while (this->run)
 				{
-					this->cs.lock();
-						int rc = poll(this->watchlist.data(), this->used, 1);
-					this->cs.unlock();
+					int rc = poll(this->watchlist.data(), this->used, 10);
 
 					if (rc < 0)
 					{
@@ -121,7 +127,7 @@ namespace usock
 
 							if (w.revents & POLLHUP)
 							{
-								this->Close(&w);
+								close(w.fd);
 							}
 							else if (w.revents & POLLIN && w.fd == primary)
 							{
@@ -135,29 +141,23 @@ namespace usock
 					}
 				}
 
-				// Close any remaining connections and associated threads
+				// Close any remaining connections
 				for (int i=1; i<CONNECTIONS; i++)
 				{
 					if (this->watchlist[i].fd >= 0)
 					{
 						close(this->watchlist[i].fd);
-						this->watchlist[i].fd = -1;
-					}
-					if (this->threads[i].joinable())
-					{
-						this->threads[i].join();
 					}
 				}
 
 				close(primary);
-				this->watchlist[0].fd = -1;
+
+				Log::Info("usock::Server exited");
 			}
 
 
 			void Add(int client)
 			{
-				std::lock_guard lock(this->cs);
-
 				if (client != -1)
 				{
 					// First watchlist item is the primary
@@ -165,15 +165,8 @@ namespace usock
 					{
 						auto *watch = &this->watchlist[i];
 
-						if (watch->fd < 0)
+						if (watch->fd < 0 && this->threads[i].Ready())
 						{
-							if (this->threads[i].joinable())
-							{
-								this->threads[i].join();
-							}
-
-							Log::Info("usock::Server client %d connected", client);
-
 							// Set a timeout for reads on this socket so that recv does
 							// not block indefinitely when the server is exiting with
 							// outstanding connections.
@@ -185,13 +178,19 @@ namespace usock
 							// see the POLLHUP event when the client disconnects.
 							*watch = { client, 0, 0 };
 
-							this->threads[i] = std::thread([watch, this] {
-								while (watch->fd >= 0)
-								{
-									this->Read(watch);
-								}
+							this->threads[i].Run([watch, i, this] {
+
+								Log::Info("usock::Server client %d connected on thread %d", watch->fd, i);
+
+								while (this->Read(watch->fd));
+
+								Log::Info("usock::Server client %d disconnected on thread %d", watch->fd, i);
+
+								close(watch->fd);
+								watch->fd = -1;
 							});
 
+							this->Refresh();
 							return;
 						}
 					}
@@ -200,30 +199,6 @@ namespace usock
 
 					Log::Error("usock::Server could not handle client %d, no available connections", client);
 				}
-			}
-
-
-			bool Close(pollfd *client, int error = 0)
-			{
-				// Do not attempt closing the connection if the
-				// server is exiting
-				if (this->run)
-				{
-					std::lock_guard lock(this->cs);
-
-					if (client->fd >= 0)
-					{
-						close(client->fd);
-
-						if (error)	Log::Error("usock::Server client %d disconnected due to error: %s", client->fd, strerror(error));
-						else		Log::Info("usock::Server client %d disconnected", client->fd);
-
-						client->fd = -1;
-						this->Refresh();
-					}
-				}
-
-				return false;
 			}
 
 
@@ -244,15 +219,15 @@ namespace usock
 			}
 
 
-			bool Read(pollfd *client)
+			bool Read(int client)
 			{
-				static thread_local std::string input(1024, '\0');
-				static thread_local std::string output(1024, '\0');
+				thread_local std::string input(1024, '\0');
+				thread_local std::string output(1024, '\0');
 
 				uint32_t size	= 0;
 				uint32_t total	= 0;
 
-				int rc = recv(client->fd, &size, sizeof(uint32_t), 0);
+				int rc = recv(client, &size, sizeof(uint32_t), 0);
 
 
 				if (rc != sizeof(uint32_t))
@@ -261,21 +236,27 @@ namespace usock
 					// timeout was configured for this connection
 					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
-						return false;
+						return true;
 					}
 
-					return this->Close(client, rc < 0 ? errno : 0);
+					if (rc < 0)
+					{
+						Log::Error("usock::Server client %d error: %s", client, strerror(errno));
+					}
+
+					return false;
 				}
 
 				input.resize(size);
 
 				while (total < size)
 				{
-					rc = recv(client->fd, (byte *)input.data() + total, size - total, 0);
+					rc = recv(client, (byte *)input.data() + total, size - total, 0);
 
 					if (rc < 1)
 					{
-						return this->Close(client, rc < 0 ? errno : 0);
+						Log::Error("usock::Server client %d error: %s", client, strerror(errno));
+						return false;
 					}
 					else
 					{
@@ -285,47 +266,53 @@ namespace usock
 
 				if (total && this->onMessage && this->onMessage(input, output))
 				{
-					this->Write(client, output);
+					return this->Write(client, output);
 				}
 
 				return true;
 			}
 
 
-			void Write(pollfd *client, const std::string &buffer)
+			bool Write(int client, const std::string &buffer)
 			{
 				uint32_t size	= buffer.size();
 				uint32_t total	= 0;
 
-				int rc = send(client->fd, &size, sizeof(uint32_t), MSG_NOSIGNAL);
+				int rc = send(client, &size, sizeof(uint32_t), MSG_NOSIGNAL);
 
 				if (rc != sizeof(uint32_t))
 				{
-					return this->Close(client, rc < 0 ? errno : 0);
+					if (rc < 0)
+					{
+						Log::Error("usock::Server client %d error: %s", client, strerror(errno));
+					}
+
+					return false;
 				}
 
 				while (total < size)
 				{
-					rc = send(client->fd, buffer.data() + total, size - total, MSG_NOSIGNAL);
+					rc = send(client, buffer.data() + total, size - total, MSG_NOSIGNAL);
 
 					if (rc < 1)
 					{
-						return this->Close(client, rc < 0 ? errno : 0);
+						Log::Error("usock::Server client %d error: %s", client, strerror(errno));
+						return false;
 					}
 					else
 					{
 						total += rc;
 					}
 				}
+
+				return true;
 			}
 
 
 			std::function<bool(const std::string&, std::string&)> onMessage;
-
-			std::atomic<bool> run;
+			std::array<PersistentThread, CONNECTIONS> threads;
 			std::array<pollfd, CONNECTIONS> watchlist;
-			std::array<std::thread, CONNECTIONS> threads;
-			std::mutex cs;
+			std::atomic<bool> run;
 			int used = 0;
 	};
 }}
