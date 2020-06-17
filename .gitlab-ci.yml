@@ -22,8 +22,10 @@ package-all:
     - ./build
     - mkdir -p /packages/xenial/oss/
     - mkdir -p /packages/bionic/oss/
+    - mkdir -p /packages/focal/oss/
     - cp libemergent-dev_*.deb /packages/xenial/oss/libemergent-dev.deb
     - cp libemergent-dev_*.deb /packages/bionic/oss/libemergent-dev.deb
+    - cp libemergent-dev_*.deb /packages/focal/oss/libemergent-dev.deb
   artifacts:
     paths:
       - packages/*.deb
