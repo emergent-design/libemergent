@@ -1,3 +1,9 @@
+libemergent0 (0.0.28) unstable; urgency=medium
+
+  * Added a focal package output
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Tue, 30 Jun 2020 16:53:45 +0100
+
 libemergent0 (0.0.27) unstable; urgency=medium
 
   * Re-factored usock::Server again with PersistentThreads and no mutex
