@@ -21,10 +21,10 @@ namespace emergent
 			{
 				tm result;
 
-				#ifdef __GNUC__
-					localtime_r(&time, &result);
+				#if defined(_WIN64) || defined(_WIN32)
+					result = *localtime(&time);
 				#else
-					localtime_s(&result, &time);
+					localtime_r(&time, &result);
 				#endif
 
 				return result;
