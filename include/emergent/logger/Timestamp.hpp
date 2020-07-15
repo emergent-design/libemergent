@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ctime>
+#include <time.h>
 #include <chrono>
 #include <emergent/String.hpp>
 
