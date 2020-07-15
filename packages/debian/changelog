@@ -1,3 +1,9 @@
+libemergent0 (0.0.29) unstable; urgency=medium
+
+  * Patch for mingw builds
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 15 Jul 2020 16:27:46 +0100
+
 libemergent0 (0.0.28) unstable; urgency=medium
 
   * Added a focal package output
