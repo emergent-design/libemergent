@@ -22,9 +22,10 @@ Makefile
 bin/
 lib/
 obj/
+build/
 .directory
 .build-*/
-.codelite/
+
 
 emergent.workspace.*
 compilation.db
