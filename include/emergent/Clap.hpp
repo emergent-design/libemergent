@@ -43,7 +43,7 @@ namespace emergent
 				// in the usage text. Useful for including default values.
 				template<typename ...Args> auto &Describe(const char *message, Args ...args)
 				{
-					this->description = emg::String::format(message, args...);
+					this->description = String::format(message, args...);
 					return *this;
 				}
 
