@@ -24,7 +24,7 @@ namespace emergent
 			{
 				// The long name of this option.
 				// e.g. "help" which will expect "--help" on the command-line
-				auto &Name(std::string name)
+				auto &Name(const std::string &name)
 				{
 					this->name = name;
 					return *this;
@@ -32,11 +32,21 @@ namespace emergent
 
 				// A description for this option that will appear in the
 				// usage text.
-				auto &Describe(std::string description)
+				auto &Describe(const std::string &description)
 				{
 					this->description = description;
 					return *this;
 				}
+
+
+				// A formatted description for this option that will appear
+				// in the usage text. Useful for including default values.
+				template<typename ...Args> auto &Describe(const char *message, Args ...args)
+				{
+					this->description = emg::String::format(message, args...);
+					return *this;
+				}
+
 
 				// Bind this option to a variable. This may be a numeric
 				// or a string. Additionally it can be a std::vector of
