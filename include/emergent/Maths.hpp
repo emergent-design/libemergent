@@ -1,9 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <emergent/Emergent.hpp>
 #include <array>
 #include <cmath>
 #include <limits>
+#include <numeric>
 
 
 namespace emergent
@@ -156,6 +158,41 @@ namespace emergent
 				}
 
 				return 0.0;
+			}
+
+
+			// Find the median in a vector of numeric values. This will modify the
+			// the supplied samples vector by partially sorting it.
+			template <typename T> static T median(std::vector<T> &samples)
+			{
+				const auto size = samples.size();
+
+				switch (size)
+				{
+					case 0:		return 0;
+					case 1:		return samples[0];
+					case 2:		return (samples[0] + samples[1]) / 2;
+					default:	break;
+				}
+
+				const auto middle = size / 2;
+
+				std::nth_element(samples.begin(), samples.begin() + middle, samples.end());
+
+				return samples[middle];
+
+				// Cannot take the mean of the two median values because nth_element
+				// does not guarantee that the `middle - 1`th value is sorted.
+				// return size % 2 ? samples[middle] : (samples[middle - 1] + samples[middle]) / 2;
+			}
+
+
+			// Find the floating-point mean of numeric values in a vector.
+			template <typename T> static double mean(const std::vector<T> &samples)
+			{
+				return samples.size()
+					? std::accumulate(samples.cbegin(), samples.cend(), 0.0) / (double)samples.size()
+					: 0;
 			}
 	};
 
