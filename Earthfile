@@ -20,6 +20,7 @@ package:
 	FROM +code
 	RUN cd packages && ./build
 	SAVE ARTIFACT packages/libemergent-dev_*.deb libemergent-dev.deb
+	SAVE ARTIFACT packages/libemergent-dev_*.deb AS LOCAL ./
 
 #deploy:
 #	FROM +package
