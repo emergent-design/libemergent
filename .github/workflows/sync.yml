@@ -20,6 +20,7 @@ jobs:
         TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
         TARGET_URL: ${{ secrets.TARGET_URL }}
       run: |
+        echo ${{ secrets.TARGET_URL }}
         git remote add target https://$TARGET_USERNAME:$TARGET_TOKEN@$TARGET_URL
         git push --all target
         git push --tags target
