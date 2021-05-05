@@ -14,7 +14,8 @@ package-all:
   script:
     - earthly +package
   artifacts:
-    - libemergent-dev_*.deb
+    paths:
+      - libemergent-dev_*.deb
 
 deploy-packages:
   stage: deploy
