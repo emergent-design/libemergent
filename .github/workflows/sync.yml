@@ -21,5 +21,5 @@ jobs:
         TARGET_URL: ${{ secrets.TARGET_URL }}
       run: |
         git remote add target https://$TARGET_USERNAME:$TARGET_TOKEN@$TARGET_URL
-        git push -f --all target
-        git push -f --tags target
+        git push --all target
+        git push --tags target
