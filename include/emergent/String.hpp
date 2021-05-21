@@ -77,6 +77,8 @@ namespace emergent
 
 			#ifdef __cpp_lib_string_view
 				#include <string_view>
+
+				/// Split a string into a list of strings wherever the specified delimiters are found
 				static std::vector<std::string_view> explode(std::string_view text, std::string_view delimiters)
 				{
 					int last = 0;
@@ -92,6 +94,40 @@ namespace emergent
 					}
 
 					return result;
+				}
+
+				/// Interpolate tokens delimited by {} within the string text and replace using the substitution function - this
+				/// allows lookups or modifications to be performed. For example:
+				///		auto text = interpolate("The value is {value}\n", [](auto s) { return "hello"; });
+				/// which will result in text containing "The value is hello\n"
+				static const std::string interpolate(std::string_view text, std::function<const std::string(std::string_view)> substitute)
+				{
+					std::string result;
+					result.reserve(text.length());
+
+					int start	= text.find_first_of('{');
+					int end		= 0;
+
+					while (start != std::string_view::npos)
+					{
+						result += text.substr(end, start - end);
+						end		= text.find_first_of('}', start);
+
+						if (end == std::string_view::npos)
+						{
+							return {};	// Missing closing brace for token
+						}
+
+						result += substitute(
+							text.substr(start + 1, end - start - 1)
+						);
+
+						start = text.find_first_of('{', ++end);
+					}
+
+					return end < text.length()
+						? result.append(text.substr(end))
+						: result;
 				}
 			#endif
 
