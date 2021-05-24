@@ -1,3 +1,9 @@
+libemergent0 (0.0.33) unstable; urgency=medium
+
+  * Added a string interpolation helper function
+
+ -- Dan <dan@dodeca>  Mon, 24 May 2021 11:23:12 +0100
+
 libemergent0 (0.0.32) unstable; urgency=medium
 
   * Update to the deployment process
