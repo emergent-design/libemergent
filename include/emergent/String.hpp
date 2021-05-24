@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <vector>
 
