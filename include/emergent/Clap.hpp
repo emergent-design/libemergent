@@ -4,12 +4,9 @@
 #include <set>
 #include <sstream>
 #include <functional>
-#include <emergent/Path.hpp>
+#include <emergent/Console.hpp>
 #include <emergent/String.hpp>
-
-#ifdef __linux
-	#include <sys/ioctl.h>
-#endif
+#include <emergent/FS.hpp>
 
 
 namespace emergent
@@ -166,11 +163,11 @@ namespace emergent
 			void Usage(std::ostream &dst, std::string processName, int consoleWidth = 0)
 			{
 				int widest	= 0;
-				int width	= consoleWidth ? consoleWidth : this->ConsoleWidth();
+				int width	= consoleWidth ? consoleWidth : Console::Width(); //this->ConsoleWidth();
 				std::vector<std::pair<std::string, std::string>> entries;
 				std::string extra;
 
-				dst << "usage: " << Path(processName).filename() << " [options]";
+				dst << "usage: " << fs::path(processName).filename().string() << " [options]";
 
 				// List and describe the positional arguments
 				for (auto &p : positions)
@@ -216,36 +213,15 @@ namespace emergent
 				// Describe the options
 				for (auto &e : entries)
 				{
-					dst << e.first << std::string(widest - e.first.size(), ' ');
-
-					for (auto &l : Format(e.second, widest, width - widest))
-					{
-						dst << l << std::endl;
-					}
+					dst << e.first
+						<< std::string(widest - e.first.size(), ' ')
+						<< Console::Format(e.second, widest, width - widest)
+					;
 				}
 			}
 
 
 		private:
-
-			// Determine the console width on linux systems.
-			static int ConsoleWidth()
-			{
-				#ifdef __linux
-					#ifdef TIOCGSIZE
-						struct ttysize ts;
-						ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
-						return ts.ts_cols;
-					#elif defined(TIOCGWINSZ)
-						struct winsize ts;
-						ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
-						return ts.ws_col;
-					#endif
-				#endif
-
-				return 80;
-			}
-
 
 			// Split the command-line arguments up into a list of option names and
 			// values. The bool indicates whether it is an option or a value.
@@ -409,31 +385,6 @@ namespace emergent
 			}
 
 
-			// Format the description of a single option to fit the console width. The value
-			// "padding" is the amount of indentation required for multi-line descriptions.
-			static const std::vector<std::string> Format(std::string description, int padding, int width)
-			{
-				if (description.empty()) return {""};
-
-				std::vector<std::string> lines;
-				auto np		= std::string::npos;
-				auto pad	= std::string(padding, ' ');
-				int size	= description.size();
-				int pos		= 0;
-
-				while (pos < size)
-				{
-					auto last = size - pos < width ? np : description.find_last_of(" .,([/-", pos + width - 1);
-					auto next = description.substr(pos, last == np || last < pos ? width : last + 1);
-
-					lines.push_back((pos ? pad : "") + next);
-					pos += next.size();
-				}
-
-				return lines;
-			}
-
-
 			// If the bound variable is a vector<> then attempt to convert the value
 			// to the element type of the container and then add it.
 			template <typename T> static void Convert(std::string value, std::vector<T> &target)
@@ -451,7 +402,7 @@ namespace emergent
 			}
 
 
-			static void Convert(std::string value, emergent::Path &target)
+			static void Convert(std::string value, fs::path &target)
 			{
 				target = value;
 			}
