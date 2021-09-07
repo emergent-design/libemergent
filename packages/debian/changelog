@@ -1,3 +1,10 @@
+libemergent0 (0.0.36) unstable; urgency=medium
+
+  * Improved Console formatting
+  * Added possibility of range shifting when converting between image types.
+
+ -- Dan <dan@dodeca>  Tue, 07 Sep 2021 09:59:41 +0100
+
 libemergent0 (0.0.35) unstable; urgency=medium
 
   * Removed Path dependency in Clap.
