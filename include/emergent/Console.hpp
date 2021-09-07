@@ -64,14 +64,19 @@ namespace emergent
 
 			while (pos < size)
 			{
+				const auto line = f.text.find_first_of('\n', pos) - pos;
 				const auto last = size - pos < remaining
 					? std::string::npos
-					: f.text.find_last_of(" .,([/-", pos + remaining - 1);
+					: f.text.find_last_of(" .,(/-", pos + remaining - 1);
 
-				const auto next = f.text.substr(pos, last == std::string::npos || last < pos
-					? remaining
-					: last + 1 - pos
+				const auto next = line < remaining
+					? f.text.substr(pos, line)
+					: f.text.substr(pos, last == std::string::npos || last < pos
+						? remaining
+						: last + 1 - pos
 				);
+
+				// dst << '\n' << pos << " : " << (line == std::string::npos ? -1 : line) << ", " << (last == std::string::npos ? -1 : last) << '\n';
 
 				if (pos > 0)
 				{
@@ -79,7 +84,7 @@ namespace emergent
 				}
 
 				dst << next << '\n';
-				pos += next.size();
+				pos += next.size() + (line < remaining ? 1 : 0);
 			}
 
 			return dst;
@@ -96,5 +101,8 @@ namespace emergent
 		static constexpr const char *Magenta	= "\e[35m";
 		static constexpr const char *Cyan		= "\e[36m";
 		static constexpr const char *White		= "\e[37m";
+
+		// Console commands
+		static constexpr const char *Erase		= "\33[2K\r";
 	};
 }

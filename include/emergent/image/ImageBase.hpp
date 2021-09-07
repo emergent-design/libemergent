@@ -783,8 +783,9 @@ namespace emergent
 				T *dst = this->buffer;
 
 				std::function<T(U value)> apply = nullptr;
-				if (r.range > max)	apply = [&](U value) { return (T)lrint(max * r.normalise(value)); };
-				else				apply = [&](U value) { return (T)(value - r.min); };
+				if (r.range > max)		apply = [&](U value) { return (T)lrint(max * r.normalise(value)); };
+				else if (r.max > max)	apply = [&](U value) { return (T)(value - r.min); };
+				else					apply = [&](U value) { return (T)value; };
 
 				if (this->depth == image.depth)
 				{
