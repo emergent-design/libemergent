@@ -2,7 +2,7 @@ Package: libemergent-dev
 Version: 0.0.10
 Section: libdevel
 Priority: optional
-Architecture: amd64
+Architecture: all
 Maintainer: Dan Parnham <dan@emergent-design.co.uk>
 Installed-Size: 788
 Suggests: pkg-config

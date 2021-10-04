@@ -76,8 +76,6 @@ namespace emergent
 						: last + 1 - pos
 				);
 
-				// dst << '\n' << pos << " : " << (line == std::string::npos ? -1 : line) << ", " << (last == std::string::npos ? -1 : last) << '\n';
-
 				if (pos > 0)
 				{
 					dst << std::setw(f.padding) << ' ';
