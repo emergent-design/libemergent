@@ -1,0 +1,12 @@
+Source: libemergent0
+Priority: optional
+Build-Depends: build-essential, debhelper (>= 9), dh-exec
+Maintainer: Dan Parnham <dan@emergent-design.co.uk>
+Homepage: https://github.com/emergent-design/libemergent
+
+Package: libemergent-dev
+Section: libdevel
+Architecture: all
+Description: Development headers for libemergent
+ Helpers for dealing with images, logging, file paths,
+ types and some simple structures.

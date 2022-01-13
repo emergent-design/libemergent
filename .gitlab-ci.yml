@@ -15,7 +15,7 @@ package-all:
     - earthly +package
   artifacts:
     paths:
-      - libemergent-dev_*.deb
+      - build/**.deb
 
 deploy-packages:
   stage: deploy
@@ -23,6 +23,9 @@ deploy-packages:
   only: [ tags ]
   dependencies: [ package-all ]
   script:
-    - scp libemergent-dev_*.deb $DEPLOY_DOWNLOADS/libemergent/
-    - phi-deploy libemergent-dev_*.deb bionic oss
-    - phi-deploy libemergent-dev_*.deb focal oss
+    # - scp libemergent-dev_*.deb $DEPLOY_DOWNLOADS/libemergent/
+    # - phi-deploy libemergent-dev_*.deb bionic oss
+    # - phi-deploy libemergent-dev_*.deb focal oss
+    - for REPO in bionic focal; do
+        phi-deploy build/$REPO/libemergent-dev_*.deb $REPO oss;
+      done

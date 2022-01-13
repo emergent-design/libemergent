@@ -2,51 +2,51 @@ libemergent0 (0.0.37) unstable; urgency=medium
 
   * Switched package to "all" architecture
 
- -- Dan <dan@dodeca>  Mon, 04 Oct 2021 15:52:02 +0100
+ -- Dan <dan@emergent-design.co.uk>  Mon, 04 Oct 2021 15:52:02 +0100
 
 libemergent0 (0.0.36) unstable; urgency=medium
 
   * Improved Console formatting
   * Added possibility of range shifting when converting between image types.
 
- -- Dan <dan@dodeca>  Tue, 07 Sep 2021 09:59:41 +0100
+ -- Dan <dan@emergent-design.co.uk>  Tue, 07 Sep 2021 09:59:41 +0100
 
 libemergent0 (0.0.35) unstable; urgency=medium
 
   * Removed Path dependency in Clap.
   * Moved/added some console helper functions.
 
- -- Dan <dan@dodeca>  Fri, 16 Jul 2021 15:25:34 +0100
+ -- Dan <dan@emergent-design.co.uk>  Fri, 16 Jul 2021 15:25:34 +0100
 
 libemergent0 (0.0.34) unstable; urgency=medium
 
   * Fixed missing include
 
- -- Dan <dan@dodeca>  Mon, 24 May 2021 16:35:39 +0100
+ -- Dan <dan@emergent-design.co.uk>  Mon, 24 May 2021 16:35:39 +0100
 
 libemergent0 (0.0.33) unstable; urgency=medium
 
   * Added a string interpolation helper function
 
- -- Dan <dan@dodeca>  Mon, 24 May 2021 11:23:12 +0100
+ -- Dan <dan@emergent-design.co.uk>  Mon, 24 May 2021 11:23:12 +0100
 
 libemergent0 (0.0.32) unstable; urgency=medium
 
   * Update to the deployment process
 
- -- Dan <dan@dodeca>  Tue, 11 May 2021 22:27:25 +0100
+ -- Dan <dan@emergent-design.co.uk>  Tue, 11 May 2021 22:27:25 +0100
 
 libemergent0 (0.0.31) unstable; urgency=medium
 
   * Now using earthly in the build process
 
- -- Dan <dan@dodeca>  Wed, 05 May 2021 13:23:19 +0100
+ -- Dan <dan@emergent-design.co.uk>  Wed, 05 May 2021 13:23:19 +0100
 
 libemergent0 (0.0.30) unstable; urgency=medium
 
   * Added vector-based median and mean functions to Maths.
 
- -- Dan <dan@dodeca>  Mon, 25 Jan 2021 15:26:29 +0000
+ -- Dan <dan@emergent-design.co.uk>  Mon, 25 Jan 2021 15:26:29 +0000
 
 libemergent0 (0.0.29) unstable; urgency=medium
 
