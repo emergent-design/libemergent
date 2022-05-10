@@ -456,7 +456,7 @@ namespace emergent
 			/// Save an image to file. Uses the freeimage library to attempt saving
 			/// out the image (converts it to byte first but does not scale the values,
 			/// so be warned). Image format is automatically determined by file extension.
-			bool Save(std::string path, int compression = 0)
+			bool Save(std::string path, int compression = 0) const
 			{
 				bool result = false;
 
@@ -488,7 +488,7 @@ namespace emergent
 
 
 			/// Save image to a memory buffer.
-			bool Save(Buffer<byte> &buffer, int compression)
+			bool Save(Buffer<byte> &buffer, int compression) const
 			{
 				bool result = false;
 
@@ -525,7 +525,7 @@ namespace emergent
 
 
 			/// Save a raw image file starting with ImageHeader
-			bool SaveRaw(std::string path)
+			bool SaveRaw(std::string path) const
 			{
 				if (this->Size())
 				{
@@ -567,7 +567,7 @@ namespace emergent
 
 
 
-			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, FIBITMAP *>::type ToFib()
+			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, FIBITMAP *>::type ToFib() const
 			{
 				auto *result = FreeImage_ConvertFromRawBits(this->buffer, this->width, this->height, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
@@ -592,7 +592,7 @@ namespace emergent
 			}
 
 
-			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, FIBITMAP *>::type ToFib()
+			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, FIBITMAP *>::type ToFib() const
 			{
 				FIBITMAP *result							= nullptr;
 				std::function<int(T *src, byte *dst)> apply	= nullptr;
