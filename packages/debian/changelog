@@ -1,3 +1,9 @@
+libemergent0 (0.0.38) unstable; urgency=medium
+
+  * Image saving is now a const function
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Tue, 10 May 2022 17:51:46 +0100
+
 libemergent0 (0.0.37) unstable; urgency=medium
 
   * Switched package to "all" architecture
