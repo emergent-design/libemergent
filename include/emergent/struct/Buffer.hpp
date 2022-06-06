@@ -295,22 +295,13 @@ namespace emergent
 			}
 
 
-			/// Basic iterator implementation to support range-based for loops.
-			struct iterator : std::iterator<std::input_iterator_tag, T>
-			{
-				iterator(T *position) : position(position) {}
+			typedef typename std::vector<T>::iterator iterator;
+			typedef typename std::vector<T>::const_iterator const_iterator;
 
-				iterator operator++(int)			{ return this->position++; }
-				iterator &operator++()				{ this->position++;	return *this; }
-				bool operator!=(const iterator &i)	{ return i.position != this->position; }
-				bool operator==(const iterator &i)	{ return i.position == this->position; }
-				T &operator*()						{ return *this->position; }
-
-				private: T *position = nullptr;
-			};
-
-			iterator begin() const	{ return iterator(this->data); }
-			iterator end() const	{ return iterator(this->data + this->size); }
+			iterator begin()				{ return iterator(this->data); }
+			iterator end() 					{ return iterator(this->data + this->size); }
+			const_iterator begin() const	{ return const_iterator(this->data); }
+			const_iterator end() const		{ return const_iterator(this->data + this->size); }
 
 
 		private:
