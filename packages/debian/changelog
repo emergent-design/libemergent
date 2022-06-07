@@ -1,3 +1,9 @@
+libemergent0 (0.0.39) unstable; urgency=medium
+
+  * Buffer<> now provides a more complete iterator (by borrowing the std::vector one)
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Tue, 07 Jun 2022 10:59:25 +0100
+
 libemergent0 (0.0.38) unstable; urgency=medium
 
   * Image saving is now a const function
