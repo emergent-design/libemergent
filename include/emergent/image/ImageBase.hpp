@@ -547,8 +547,10 @@ namespace emergent
 			}
 
 
-			typename Buffer<T>::iterator begin()	{ return this->buffer.begin(); }
-			typename Buffer<T>::iterator end()		{ return this->buffer.end(); }
+			typename Buffer<T>::iterator begin()				{ return this->buffer.begin(); }
+			typename Buffer<T>::iterator end()					{ return this->buffer.end(); }
+			typename Buffer<T>::const_iterator begin() const	{ return this->buffer.begin(); }
+			typename Buffer<T>::const_iterator end() const		{ return this->buffer.end(); }
 
 
 		protected:
