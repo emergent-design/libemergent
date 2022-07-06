@@ -37,7 +37,7 @@ namespace emergent
 
 							// Allow this thread to sleep and items to be added to
 							// the queue even if there are no available threads.
-							this->condition.wait_for(lock, 10ms);
+							this->condition.wait_for(lock, 10us);
 						}
 						else this->condition.wait(lock);
 					}

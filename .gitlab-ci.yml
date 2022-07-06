@@ -24,6 +24,6 @@ deploy-packages:
   dependencies: [ package-all ]
   script:
     # - scp libemergent-dev_*.deb $DEPLOY_DOWNLOADS/libemergent/
-    - for REPO in bionic focal; do
+    - for REPO in bionic focal jammy; do
         phi-deploy build/libemergent-dev_*.deb $REPO oss;
       done
