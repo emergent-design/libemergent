@@ -1,6 +1,14 @@
+libemergent0 (0.0.40) unstable; urgency=medium
+
+  * Added const interators to Buffer
+  * Increased responsiveness of the threadpool
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Fri, 22 Jul 2022 12:31:33 +0100
+
 libemergent0 (0.0.39) unstable; urgency=medium
 
-  * Buffer<> now provides a more complete iterator (by borrowing the std::vector one)
+  * Buffer<> now provides a more complete iterator
+    (by borrowing the std::vector one)
 
  -- Dan Parnham <dan@emergent-design.co.uk>  Tue, 07 Jun 2022 10:59:25 +0100
 
