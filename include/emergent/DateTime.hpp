@@ -45,7 +45,7 @@ namespace emergent
 		}
 
 
-		std::string FormatISO()
+		std::string FormatISO() const
 		{
 			tm t;
 			gmtime_r(&this->timestamp, &t);
@@ -57,7 +57,7 @@ namespace emergent
 			);
 		}
 
-		std::string FormatDateISO()
+		std::string FormatDateISO() const
 		{
 			tm t;
 			gmtime_r(&this->timestamp, &t);
