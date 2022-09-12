@@ -23,7 +23,7 @@ Installation
 ============
 
 This is a header-only library, simply ensure that the headers are on the appropriate include path.
-Under Ubuntu there are dev packages [available to download](http://downloads.emergent-design.co.uk/libemergent/)
+Under Ubuntu there are dev packages [available to download](https://github.com/emergent-design/libemergent/releases)
 which will install the headers to ```/usr/include```.
 
 
