@@ -1,5 +1,6 @@
 #pragma once
 
+#include <emergent/Timer.hpp>
 #include <emergent/logger/Logger.hpp>
 #include <hiredis/adapters/libev.h>
 #include <hiredis/async.h>
@@ -65,7 +66,15 @@ namespace redis
 			// Subscription not threaded. Drive event loop...
 			void Listen()
 			{
-				if (this->context) ev_run(this->loop, EVRUN_NOWAIT);
+				if (this->context)
+				{
+					ev_run(this->loop, EVRUN_NOWAIT);
+				}
+				else if (this->lastConnect.Elapsed() > RECONNECT_TIMEOUT)
+				{
+					this->lastConnect.Reset();
+					this->Connect();
+				}
 			}
 
 
@@ -95,11 +104,16 @@ namespace redis
 			{
 				if (this->context)
 				{
-					if (this->context->err) Log::Error("Problem with redis async connection: %s", this->context->errstr);
-					this->context	= nullptr;
+					if (this->context->err)
+					{
+						Log::Error("Problem with redis async connection: %s", this->context->errstr);
+					}
+					this->context = nullptr;
 				}
 
-				this->context = this->socket ? redisAsyncConnectUnix(this->connection.c_str()) : redisAsyncConnect(this->connection.c_str(), this->port);
+				this->context = this->socket
+					? redisAsyncConnectUnix(this->connection.c_str())
+					: redisAsyncConnect(this->connection.c_str(), this->port);
 
 				if (this->context->err)
 				{
@@ -114,17 +128,19 @@ namespace redis
 
 				redisLibevAttach(this->loop, this->context);
 
-				bool result = 	redisAsyncSetConnectCallback(this->context, &Subscription::OnConnect) == REDIS_OK
-							&&	redisAsyncSetDisconnectCallback(this->context, &Subscription::OnDisconnect) == REDIS_OK;
+				bool result = redisAsyncSetConnectCallback(this->context, &Subscription::OnConnect) == REDIS_OK
+					&& redisAsyncSetDisconnectCallback(this->context, &Subscription::OnDisconnect) == REDIS_OK;
 
 				if (!result)
 				{
 					Log::Error("Failed to attach connection handlers to redis async: %s", this->context->errstr);
 					redisAsyncFree(this->context);
 					this->context = nullptr;
+
+					return false;
 				}
 
-				return result;
+				return true;
 			}
 
 
@@ -174,9 +190,14 @@ namespace redis
 
 			static void OnDisconnect(const redisAsyncContext *context, int status)
 			{
-				if (status == REDIS_ERR) ((Subscription *)context->data)->Connect();
+				if (status == REDIS_ERR)
+				{
+					((Subscription *)context->data)->Connect();
+				}
 			}
 
+
+			static constexpr int RECONNECT_TIMEOUT = 1000;	// Time (ms) between connection attempts
 
 			int port					= -1;
 			bool socket					= false;
@@ -185,5 +206,6 @@ namespace redis
 			redisAsyncContext *context	= nullptr;
 			struct ev_loop *loop		= nullptr;
 			std::set<Channel> channels;
+			emg::Timer lastConnect;
 	};
 }}

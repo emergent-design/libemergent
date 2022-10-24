@@ -1,3 +1,9 @@
+libemergent0 (0.0.41) unstable; urgency=medium
+
+  * Subscriptions now attempt re-connection repeatedly
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 24 Oct 2022 12:42:17 +0100
+
 libemergent0 (0.0.40) unstable; urgency=medium
 
   * Added const interators to Buffer
