@@ -206,6 +206,6 @@ namespace redis
 			redisAsyncContext *context	= nullptr;
 			struct ev_loop *loop		= nullptr;
 			std::set<Channel> channels;
-			emg::Timer lastConnect;
+			emergent::Timer lastConnect;
 	};
 }}
