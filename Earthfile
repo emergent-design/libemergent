@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 code:
 	COPY --dir include packages src premake5.lua .
 
-build:
+check:
 	ARG PREMAKE=5.0.0-alpha16
 
 	FROM +code
@@ -24,6 +24,9 @@ package:
 	RUN cd packages && dpkg-buildpackage -b -uc -us
 	SAVE ARTIFACT libemergent-dev_*.deb libemergent-dev.deb
 	SAVE ARTIFACT libemergent-dev_*.deb AS LOCAL build/
+
+emergent-all:
+	BUILD +package
 
 #deploy:
 #	FROM +package

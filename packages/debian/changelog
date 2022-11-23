@@ -1,3 +1,9 @@
+libemergent0 (0.0.43) unstable; urgency=medium
+
+  * Packaging updates
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 23 Nov 2022 17:12:21 +0000
+
 libemergent0 (0.0.42) unstable; urgency=medium
 
   * Fix issue with emg alias not being visible on some platforms

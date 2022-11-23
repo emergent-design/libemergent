@@ -1,29 +1,15 @@
-stages:
-  - build
-  - deploy
+include:
+  - project: 'core/common'
+    file: '/templates/ci.yml'
 
-build-check:
-  stage: build
-  only: [ master ]
-  script:
-    - earthly +build
+variables:
+  COMPONENT: oss
 
-package-all:
-  stage: build
-  only: [ tags ]
-  script:
-    - earthly +package
-  artifacts:
-    paths:
-      - build/**.deb
+package-emergent:
+  extends: [ .build-packages ]
+  variables: { MODULE: emergent, MATCH: /^v.*$/ }
 
-deploy-packages:
-  stage: deploy
-  when: on_success
-  only: [ tags ]
-  dependencies: [ package-all ]
-  script:
-    # - scp libemergent-dev_*.deb $DEPLOY_DOWNLOADS/libemergent/
-    - for REPO in bionic focal jammy; do
-        phi-deploy build/libemergent-dev_*.deb $REPO oss;
-      done
+deploy-emergent:
+  needs: [ package-emergent ]
+  extends: [ .deploy-simple ]
+  variables: { MATCH: /^v.*$/ }
