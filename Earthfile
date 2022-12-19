@@ -28,5 +28,3 @@ package:
 emergent-all:
 	BUILD +package
 
-#deploy:
-#	FROM +package

@@ -2,6 +2,7 @@
 
 #include <emergent/Emergent.hpp>
 #include <emergent/image/Colours.hpp>
+#include <emergent/image/Iterator.hpp>
 #include <emergent/struct/Buffer.hpp>
 #include <emergent/struct/Distribution.hpp>
 #include <emergent/image/Operations.hpp>
@@ -28,7 +29,6 @@ namespace emergent
 		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric or boolean");
 
 		public:
-
 
 			ImageBase(byte depth = 1, int width = 0, int height = 0) : depth(depth), width(width), height(height)
 			{
@@ -544,6 +544,26 @@ namespace emergent
 				}
 
 				return false;
+			}
+
+
+			image::Iterator<T> Row(const int y) const
+			{
+				const size_t step = this->width * this->depth;
+
+				return y >= 0 && y < this->height
+					? image::Iterator<T>(this->buffer.Data() + y * step, this->width, this->depth)
+					: image::Iterator<T>();
+			}
+
+
+			image::Iterator<T> Column(const int x) const
+			{
+				const size_t step = this->width * this->depth;
+
+				return x >= 0 && x < this->width
+					? image::Iterator<T>(this->buffer.Data() + x * this->depth, this->height, step)
+					: image::Iterator<T>();
 			}
 
 
