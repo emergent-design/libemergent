@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emergent/struct/Buffer.hpp>
+// #include <emergent/struct/Buffer.hpp>
 #include <emergent/Maths.hpp>
 #include <vector>
 
@@ -24,10 +24,10 @@ namespace emergent
 
 
 		/// Constructor with automatic analysis of supplied buffer
-		template <class T> distribution(const Buffer<T> &data, Buffer<byte> *mask = nullptr)
-		{
-			this->analyse(data, mask);
-		}
+		// template <class T> distribution(const Buffer<T> &data, Buffer<byte> *mask = nullptr)
+		// {
+		// 	this->analyse(data, mask);
+		// }
 
 
 		/// Constructor with automatic analysis of supplied data
@@ -45,12 +45,12 @@ namespace emergent
 
 
 		/// Generate stats from a buffer
-		template <class T> bool analyse(const Buffer<T> &data, Buffer<byte> *mask)
-		{
-			if (mask && mask->Size() != data.Size()) return false;
+		// template <class T> bool analyse(const Buffer<T> &data, Buffer<byte> *mask)
+		// {
+		// 	if (mask && mask->Size() != data.Size()) return false;
 
-			return this->analyse(data.Data(), data.Size(), mask ? mask->Data() : nullptr);
-		}
+		// 	return this->analyse(data.Data(), data.Size(), mask ? mask->Data() : nullptr);
+		// }
 
 
 		/// Generate stats from a vector

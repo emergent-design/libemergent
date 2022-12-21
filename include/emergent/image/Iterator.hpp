@@ -7,7 +7,7 @@ namespace emergent::image
 	// An iterator for images - uses an arbitrary step size which can
 	// be used by ImageBase to create an iterator for both rows or columns
 	// It provides a pointer to each pixel in the row or column so that
-	// all of the channels to be accessed at once.
+	// all of the channels can be accessed at once.
 	template <typename T> struct Iterator
 	{
 		T *data;
@@ -56,9 +56,5 @@ namespace emergent::image
 
 		iterator<T> begin() { return iterator<T>(data, step); }
 		iterator<T> end()	{ return iterator<T>(data + count * step, step); }
-		iterator<const T> begin() const { return iterator<const T>(data, step); }
-		iterator<const T> end()	const	{ return iterator<const T>(data + count * step, step); }
 	};
-
-	// Region iterator?
 }

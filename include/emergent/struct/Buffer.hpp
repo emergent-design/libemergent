@@ -10,7 +10,7 @@
 namespace emergent
 {
 	/// Templated buffer implementation
-	template <class T> class Buffer
+	template <class T> class [[deprecated("should use std::vector instead")]] Buffer
 	{
 		public:
 

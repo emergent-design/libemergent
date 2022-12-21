@@ -3,13 +3,16 @@
 #include <emergent/Emergent.hpp>
 #include <emergent/image/Colours.hpp>
 #include <emergent/image/Iterator.hpp>
-#include <emergent/struct/Buffer.hpp>
+// #include <emergent/struct/Buffer.hpp>
 #include <emergent/struct/Distribution.hpp>
 #include <emergent/image/Operations.hpp>
 #include <FreeImage.h>
 #include <cstring>
 
-#include <iostream>
+// #include <iostream>
+#include <utility>
+#include <algorithm>
+
 
 namespace emergent
 {
@@ -26,21 +29,33 @@ namespace emergent
 	/// Base class for images of a given arithmetic type.
 	template <class T = byte> class ImageBase
 	{
-		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric or boolean");
+		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric");
+		static_assert(!std::is_same<T, bool>::value, "Image type cannot be bool due to std::vector specialisation");
 
 		public:
 
-			ImageBase(byte depth = 1, int width = 0, int height = 0) : depth(depth), width(width), height(height)
+			ImageBase(const byte depth = 1, const int width = 0, const int height = 0) : depth(depth)
 			{
-				if (!depth) throw std::runtime_error("Image depth must be greater than zero");
+				if (!depth)
+				{
+					throw std::runtime_error("Image depth must be greater than zero");
+				}
 
-				if (width && height) this->buffer.Resize(width * height * depth);
+				if (width > 0 && height > 0)
+				{
+					this->width		= width;
+					this->height	= height;
+					this->buffer.resize(width * height * depth);
+				}
 			}
 
 
-			ImageBase(std::string path, byte depth = 1)
+			ImageBase(const std::string &path, const byte depth = 1)
 			{
-				if (!depth) throw std::runtime_error("Image depth must be greater than zero");
+				if (!depth)
+				{
+					throw std::runtime_error("Image depth must be greater than zero");
+				}
 
 				this->Load(path, depth);
 			}
@@ -88,25 +103,26 @@ namespace emergent
 			/// Can be used to clear all the pixels of an RGB image to 0,0,0 for example.
 			ImageBase<T> &operator=(const T value)
 			{
-				this->buffer = value;
+				std::fill(this->buffer.begin(), this->buffer.end(), value);
+				// this->buffer.assign(value);
+				// this->buffer = value;
 				return *this;
 			}
 
 
 			/// Operator override to support implicit and explicit typecasting
-			operator T*() const { return this->buffer; }
+			operator T*()				{ return this->buffer.data(); }
+			operator const T*() const	{ return this->buffer.data(); }
 
 			/// Return the buffer data
-			T *Data() const { return this->buffer; }
+			T *Data()				{ return this->buffer.data(); }
+			const T *Data() const	{ return this->buffer.data(); }
 
 			/// Return the actual internal buffer.
 			/// WARNING: If you modify the size of this buffer you will corrupt the owner image
-			Buffer<T> &Internal() { return this->buffer; }
+			std::vector<T> &Internal() { return this->buffer; }
 
-			/// Return the image type ID
-			//int Type() { return this->type; }
-
-			/// Return the image depth (in bytes)
+			/// Return the image depth
 			byte Depth() const { return this->depth; }
 
 			/// Return the image width
@@ -116,22 +132,34 @@ namespace emergent
 			int Height() const { return this->height; }
 
 			/// Return the image size
-			int Size() const { return this->width * this->height; }
+			size_t Size() const { return this->width * this->height; }
+
 
 			/// Clear the image - sets all pixel values to 0 regardless of type
-			void Clear() { this->buffer.Clear(); }
+			void Clear()
+			{
+				std::fill(this->buffer.begin(), this->buffer.end(), 0);
+			}
 
 
 			/// Resizes the image buffers but destroys any existing image data.
 			/// A depth of 0 will keep the existing depth.
-			virtual void Resize(int width, int height, byte depth = 0)
+			// virtual void Resize(const size_t width, const size_t height, const byte depth = 0)
+			virtual void Resize(const int width, const int height, const byte depth = 0)
 			{
+				this->depth	= depth ? depth : this->depth;
+
 				if (width > 0 && height > 0)
 				{
 					this->width		= width;
 					this->height	= height;
-					this->depth		= depth ? depth : this->depth;
-					this->buffer.Resize(width * height * this->depth);
+					this->buffer.resize(width * height * this->depth);
+				}
+				else
+				{
+					this->width		= 0;
+					this->height	= 0;
+					this->buffer.clear();
 				}
 			}
 
@@ -200,7 +228,8 @@ namespace emergent
 
 			/// Calculate the distribution statistics of the image mask can be optionally passed in;
 			/// zero values in the mask tell distribution to ignore the corresponding pixels in the image.
-			distribution Stats(Buffer<byte> *mask = nullptr) const
+			// distribution Stats(Buffer<byte> *mask = nullptr) const
+			distribution Stats(std::vector<byte> *mask = nullptr) const
 			{
 				return distribution(this->buffer, mask);
 			}
@@ -218,7 +247,7 @@ namespace emergent
 				int x, y;
 				const int depth = this->depth;
 				const int jump	= (this->width - rw) * depth;
-				T *pb			= this->buffer + (this->width * ry + rx) * depth;
+				const T *pb		= this->buffer.data() + (this->width * ry + rx) * depth;
 
 				for (y=0; y<rh; y++, pb+=jump)
 				{
@@ -237,11 +266,12 @@ namespace emergent
 			{
 				if (height < this->height && height > 0)
 				{
-					if (this->buffer.Truncate(height * this->width * this->depth))
-					{
+					// if (this->buffer.Truncate(height * this->width * this->depth))
+					this->buffer.resize(height * this->width * this->depth);
+					// {
 						this->height = height;
 						return true;
-					}
+					// }
 				}
 
 				return false;
@@ -257,14 +287,14 @@ namespace emergent
 				if (x >= 0 && x < this->width && y >= 0 && y < this->height)
 				{
 					int i, j;
-					int ds	= this->depth;
-					int di	= image.depth;
-					int ls	= this->width * ds;
-					int li	= image.width * di;
-					int w	= std::min(image.width, this->width - x);
-					int h	= std::min(image.height, this->height - y);
-					T *ps 	= this->buffer + y * ls + x * ds;
-					T *pi 	= image;
+					const int ds	= this->depth;
+					const int di	= image.depth;
+					const int ls	= this->width * ds;
+					const int li	= image.width * di;
+					const int w		= std::min(image.width, this->width - x);
+					const int h		= std::min(image.height, this->height - y);
+					const T *pi 	= image;
+					T *ps 			= this->buffer.data() + y * ls + x * ds;
 
 					if (ds == di && !sum)
 					{
@@ -278,19 +308,19 @@ namespace emergent
 					}
 					else
 					{
-						std::function<void(T *a, T *b)> convert = nullptr;
+						std::function<void(const T *a, T *b)> convert = nullptr;
 
 						if (sum)
 						{
-							if (ds == 3 && di == 3) convert = [](T *a, T *b) { b[0] += a[0]; b[1] += a[1]; b[2] += a[2]; };
-							if (ds == 3 && di == 1) convert = [](T *a, T *b) { b[0] += a[0]; b[1] += a[0]; b[2] += a[0]; };
-							if (ds == 1 && di == 3) convert = [](T *a, T *b) { b[0] += (a[0] + a[1] + a[2]) / 3; };
-							if (ds == 1 && di == 1) convert = [](T *a, T *b) { b[0] += a[0]; };
+							if (ds == 3 && di == 3) convert = [](const T *a, T *b) { b[0] += a[0]; b[1] += a[1]; b[2] += a[2]; };
+							if (ds == 3 && di == 1) convert = [](const T *a, T *b) { b[0] += a[0]; b[1] += a[0]; b[2] += a[0]; };
+							if (ds == 1 && di == 3) convert = [](const T *a, T *b) { b[0] += (a[0] + a[1] + a[2]) / 3; };
+							if (ds == 1 && di == 1) convert = [](const T *a, T *b) { b[0] += a[0]; };
 						}
 						else
 						{
-							if (ds == 3 && di == 1) convert = [](T *a, T *b) { b[0] = a[0]; b[1] = a[0]; b[2] = a[0]; };
-							if (ds == 1 && di == 3) convert = [](T *a, T *b) { b[0] = (a[0] + a[1] + a[2]) / 3; };
+							if (ds == 3 && di == 1) convert = [](const T *a, T *b) { b[0] = a[0]; b[1] = a[0]; b[2] = a[0]; };
+							if (ds == 1 && di == 3) convert = [](const T *a, T *b) { b[0] = (a[0] + a[1] + a[2]) / 3; };
 						}
 
 						if (convert)
@@ -320,11 +350,22 @@ namespace emergent
 			{
 				if (channel < this->depth)
 				{
-					int ax 		= x < 0 ? (mirror ? -x : 0) : x < this->width  ? x : (mirror ? this->width + this->width - x - 2 : this->width - 1);
-					int ay 		= y < 0 ? (mirror ? -y : 0) : y < this->height ? y : (mirror ? this->height + this->height - y - 2 : this->height - 1);
-					int line	= this->width * this->depth;
+					#if __cpp_lib_clamp >= 201603L
+						const int ax = mirror
+							? (x < 0 ? -x : x < (int)width ? x : width + width - x - 2)
+							: std::clamp<int>(x, 0, width - 1);
 
-					return *(this->buffer + ay * line + ax * this->depth + channel);
+						const int ay = mirror
+							? (y < 0 ? -y : y < (int)height ? y : height + height - y - 2)
+							: std::clamp<int>(y, 0, height - 1);
+					#else
+						const int ax = x < 0 ? (mirror ? -x : 0) : x < (int)width  ? x : (mirror ? width + width - x - 2 : width - 1);
+						const int ay = y < 0 ? (mirror ? -y : 0) : y < (int)height ? y : (mirror ? height + height - y - 2 : height - 1);
+					#endif
+
+					const int line = this->width * this->depth;
+
+					return this->buffer.data()[ay * line + ax * this->depth + channel];
 				}
 
 				return 0;
@@ -336,16 +377,17 @@ namespace emergent
 			{
 				if (x >= 0 && x < this->width - 1 && y >= 0 && y < this->height - 1 && channel < this->depth)
 				{
-					int line		= this->width * this->depth;
-					double sx		= x - (int)x;
-					double sy		= y - (int)y;
-					T *pb			= this->buffer + (int)y * line + (int)x * this->depth + channel;
-					double result	= (double)*pb * (1 - sx) * (1 - sy)
-						+ (double)*(pb + this->depth) * sx * (1 - sy)
-						+ (double)*(pb + line) * (1 - sx) * sy
-						+ (double)*(pb + line + this->depth) * sx * sy;
+					const size_t line	= this->width * this->depth;
+					const double sx		= x - (int)x;
+					const double sy		= y - (int)y;
+					auto *pb			= this->buffer.data() + (int)y * line + (int)x * this->depth + channel;
+					const double result	=
+						  (double)pb[0] * (1 - sx) * (1 - sy)
+						+ (double)pb[this->depth] * sx * (1 - sy)
+						+ (double)pb[line] * (1 - sx) * sy
+						+ (double)pb[line + this->depth] * sx * sy;
 
-					return std::is_integral<T>::value ? lrint(result) : result;
+					return std::is_integral<T>::value ? std::lrint(result) : result;
 				}
 
 				return 0;
@@ -357,31 +399,31 @@ namespace emergent
 			/// zeroes will be returned.
 			template <byte N> std::array<T, N> InterpolateAll(double x, double y) const
 			{
-				std::array<T, N> result = {};
+				std::array<T, N> result = { 0 };
 
 				if (N == this->depth && x >= 0 && x < this->width - 1 && y >= 0 && y < this->height - 1)
 				{
-					int line	= this->width * N;
-					double sx	= x - (int)x;
-					double sy	= y - (int)y;
-					double a	= (1 - sx) * (1 - sy);
-					double b	= sx * (1 - sy);
-					double c	= (1 - sx) * sy;
-					double d	= sx * sy;
-					T *pb		= this->buffer + (int)y * line + (int)x * N;
+					const int line	= this->width * N;
+					const double sx	= x - (int)x;
+					const double sy	= y - (int)y;
+					const double a	= (1 - sx) * (1 - sy);
+					const double b	= sx * (1 - sy);
+					const double c	= (1 - sx) * sy;
+					const double d	= sx * sy;
+					auto *pb		= this->buffer.data() + (int)y * line + (int)x * N;
 
 					if (std::is_integral<T>::value)
 					{
 						for (int i=0; i<N; i++, pb++)
 						{
-							result[i] = lrint(a * *pb + b * pb[N]+ c * pb[line] + d * pb[line + N]);
+							result[i] = std::lrint(a * pb[0] + b * pb[N]+ c * pb[line] + d * pb[line + N]);
 						}
 					}
 					else
 					{
 						for (int i=0; i<N; i++, pb++)
 						{
-							result[i] = a * *pb + b * pb[N]+ c * pb[line] + d * pb[line + N];
+							result[i] = a * pb[0] + b * pb[N]+ c * pb[line] + d * pb[line + N];
 						}
 					}
 				}
@@ -395,7 +437,7 @@ namespace emergent
 			/// of the image. It should cope with any standard image formats. If depth is 0 then the
 			/// depth of this image will be left as it is, otherwise it will attempt to convert to the
 			/// required depth where necessary.
-			virtual bool Load(std::string path, byte depth = 0)
+			virtual bool Load(const std::string &path, const byte depth = 0)
 			{
 				bool result = false;
 				auto fif	= FreeImage_GetFileType(path.c_str(), 0);
@@ -419,10 +461,10 @@ namespace emergent
 
 			/// Load an image from memory buffer. If depth is 0 then the depth of this image will be left
 			/// as it is, otherwise it will attempt to convert to the required depth where necessary.
-			virtual bool Load(Buffer<byte> &buffer, byte depth = 0)
+			virtual bool Load(std::vector<byte> &buffer, const byte depth = 0)
 			{
 				bool result	= false;
-				auto *mem 	= FreeImage_OpenMemory(buffer.Data(), buffer.Size());
+				auto *mem 	= FreeImage_OpenMemory(buffer.data(), buffer.size());
 
 				if (mem)
 				{
@@ -447,7 +489,7 @@ namespace emergent
 
 
 			/// Load a raw image file, expects ImageHeader to be at the beginning
-			virtual bool LoadRaw(std::string path)
+			virtual bool LoadRaw(const std::string &path)
 			{
 				return this->LoadRaw(path, false);
 			}
@@ -456,7 +498,7 @@ namespace emergent
 			/// Save an image to file. Uses the freeimage library to attempt saving
 			/// out the image (converts it to byte first but does not scale the values,
 			/// so be warned). Image format is automatically determined by file extension.
-			bool Save(std::string path, int compression = 0) const
+			bool Save(const std::string &path, int compression = 0) const
 			{
 				bool result = false;
 
@@ -488,7 +530,7 @@ namespace emergent
 
 
 			/// Save image to a memory buffer.
-			bool Save(Buffer<byte> &buffer, int compression) const
+			bool Save(std::vector<byte> &buffer, const int compression) const
 			{
 				bool result = false;
 
@@ -513,9 +555,14 @@ namespace emergent
 
 					if (result && FreeImage_AcquireMemory(mem, &data, &size))
 					{
-						buffer.Set(data, size);
+						// buffer.resize(size);
+						// std::memcpy(buffer.data(), data, size);
+						buffer.assign(data, data + size);
 					}
-					else result = false;
+					else
+					{
+						result = false;
+					}
 
 					FreeImage_CloseMemory(mem);
 				}
@@ -525,7 +572,7 @@ namespace emergent
 
 
 			/// Save a raw image file starting with ImageHeader
-			bool SaveRaw(std::string path) const
+			bool SaveRaw(const std::string &path) const
 			{
 				if (this->Size())
 				{
@@ -547,51 +594,84 @@ namespace emergent
 			}
 
 
-			image::Iterator<T> Row(const int y) const
+			// Return an iterator to a row in the image. It will automatically step between pixels
+			// and provide a pointer to the current position which gives access to all channels.
+			image::Iterator<T> Row(const int y)
 			{
-				const size_t step = this->width * this->depth;
-
 				return y >= 0 && y < this->height
-					? image::Iterator<T>(this->buffer.Data() + y * step, this->width, this->depth)
+					? image::Iterator<T>(this->buffer.data() + y * this->width * this->depth, this->width, this->depth)
 					: image::Iterator<T>();
 			}
 
-
-			image::Iterator<T> Column(const int x) const
+			// Return a const iterator to a row in the image. It will automatically step between pixels
+			// and provide a pointer to the current position which gives access to all channels.
+			image::Iterator<const T> Row(const int y) const
 			{
-				const size_t step = this->width * this->depth;
-
-				return x >= 0 && x < this->width
-					? image::Iterator<T>(this->buffer.Data() + x * this->depth, this->height, step)
-					: image::Iterator<T>();
+				return y >= 0 && y < this->height
+					? image::Iterator<const T>(this->buffer.data() + y * this->width * this->depth, this->width, this->depth)
+					: image::Iterator<const T>();
 			}
 
 
-			typename Buffer<T>::iterator begin()				{ return this->buffer.begin(); }
-			typename Buffer<T>::iterator end()					{ return this->buffer.end(); }
-			typename Buffer<T>::const_iterator begin() const	{ return this->buffer.begin(); }
-			typename Buffer<T>::const_iterator end() const		{ return this->buffer.end(); }
+			// Return an iterator to a column in the image. It will automatically step between rows
+			// and provide a pointer to the current position which gives access to all channels.
+			image::Iterator<T> Column(const int x)
+			{
+				return x >= 0 && x < this->width
+					? image::Iterator<T>(this->buffer.data() + x * this->depth, this->height, this->width * this->depth)
+					: image::Iterator<T>();
+			}
+
+			// Return a const iterator to a column in the image. It will automatically step between rows
+			// and provide a pointer to the current position which gives access to all channels.
+			image::Iterator<const T> Column(const int x) const
+			{
+				return x >= 0 && x < this->width
+					? image::Iterator<const T>(this->buffer.data() + x * this->depth, this->height, this->width * this->depth)
+					: image::Iterator<const T>();
+			}
+
+
+			// Return an iterator to all of the pixels in the image. It will automatically step between
+			// pixels and provide a poitner to the current position which gives access to all channels.
+			image::Iterator<T> Pixels()
+			{
+				return image::Iterator<T>(this->buffer.data(), this->width * this->height, this->depth);
+			}
+
+			// Return a const iterator to all of the pixels in the image. It will automatically step between
+			// pixels and provide a poitner to the current position which gives access to all channels.
+			image::Iterator<const T> Pixels() const
+			{
+				return image::Iterator<const T>(this->buffer.data(), this->width * this->height, this->depth);
+			}
+
+
+			auto begin()		{ return this->buffer.begin(); }
+			auto end()			{ return this->buffer.end(); }
+			auto begin() const	{ return this->buffer.begin(); }
+			auto end() const	{ return this->buffer.end(); }
 
 
 		protected:
 
-			/// Image depth
+			// Image depth
 			byte depth = 1;
 
-			/// Image width
-			int width = 0;
+			// Image width
+			size_t width = 0;
 
-			/// Image height
-			int height = 0;
+			// Image height
+			size_t height = 0;
 
-			/// Buffer for the actual image data
-			Buffer<T> buffer;
+			// Buffer for the actual image data
+			std::vector<T> buffer;
 
 
 
 			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, FIBITMAP *>::type ToFib() const
 			{
-				auto *result = FreeImage_ConvertFromRawBits(this->buffer, this->width, this->height, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
+				auto *result = FreeImage_ConvertFromRawBits(const_cast<T*>(this->buffer.data()), this->width, this->height, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
 				#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
 					if (result && this->depth == 3)
@@ -617,14 +697,14 @@ namespace emergent
 			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, FIBITMAP *>::type ToFib() const
 			{
 				FIBITMAP *result							= nullptr;
-				std::function<int(T *src, byte *dst)> apply	= nullptr;
+				std::function<int(const T *src, byte *dst)> apply	= nullptr;
 
 				if (std::is_integral<T>::value)
 				{
 					if (this->depth == 3)
 					{
 						result	= FreeImage_AllocateT(FIT_RGB16, this->width, this->height);
-						apply	= [](T *src, byte *dst) {
+						apply	= [](const T *src, byte *dst) {
 							reinterpret_cast<FIRGB16 *>(dst)->red	= src[0];
 							reinterpret_cast<FIRGB16 *>(dst)->green	= src[1];
 							reinterpret_cast<FIRGB16 *>(dst)->blue	= src[2];
@@ -634,7 +714,7 @@ namespace emergent
 					else if (this->depth == 1)
 					{
 						result	= FreeImage_AllocateT(FIT_UINT16, this->width, this->height);
-						apply	= [](T *src, byte *dst) {
+						apply	= [](const T *src, byte *dst) {
 							*reinterpret_cast<uint16_t *>(dst) = *src;
 							return sizeof(uint16_t);
 						};
@@ -645,7 +725,7 @@ namespace emergent
 					if (this->depth == 3)
 					{
 						result	= FreeImage_AllocateT(FIT_RGBF, this->width, this->height);
-						apply	= [](T *src, byte *dst) {
+						apply	= [](const T *src, byte *dst) {
 							reinterpret_cast<FIRGBF *>(dst)->red	= src[0];
 							reinterpret_cast<FIRGBF *>(dst)->green	= src[1];
 							reinterpret_cast<FIRGBF *>(dst)->blue	= src[2];
@@ -655,7 +735,7 @@ namespace emergent
 					else if (this->depth == 1)
 					{
 						result	= FreeImage_AllocateT(FIT_FLOAT, this->width, this->height);
-						apply	= [](T *src, byte *dst) {
+						apply	= [](const T *src, byte *dst) {
 							*reinterpret_cast<float *>(dst) = *src;
 							return sizeof(float);
 						};
@@ -665,7 +745,7 @@ namespace emergent
 				if (result)
 				{
 					int x, y;
-					T *b = this->buffer;
+					auto *b = this->buffer.data();
 
 					for (y=0; y<height; y++)
 					{
@@ -684,24 +764,28 @@ namespace emergent
 
 
 
-			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image, byte depth)
+			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image, const byte depth)
 			{
 				this->width 	= FreeImage_GetWidth(image);
 				this->height	= FreeImage_GetHeight(image);
 				this->depth		= depth ? depth : this->depth;
-				this->buffer.Resize(this->width * this->height * this->depth);
+				this->buffer.resize(this->width * this->height * this->depth);
 
-				FreeImage_ConvertToRawBits(this->buffer, image, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
+				FreeImage_ConvertToRawBits(this->buffer.data(), image, this->width * this->depth, this->depth * 8, 0, 0, 0, true);
 
 				#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
 					if (this->depth == 3)
 					{
-						byte *end = this->buffer + this->width * this->height * this->depth;
-
-						for (byte *data = this->buffer; data < end; data += this->depth)
+						for (auto p : this->Pixels())
 						{
-							std::swap(data[0], data[2]);
+							std::swap(p[0], p[2]);
 						}
+						// byte *end = this->buffer.data() + this->width * this->height * this->depth;
+
+						// for (byte *data = this->buffer.data(); data < end; data += this->depth)
+						// {
+						// 	std::swap(data[0], data[2]);
+						// }
 					}
 				#endif
 
@@ -709,7 +793,7 @@ namespace emergent
 			}
 
 
-			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image, byte depth)
+			template <typename U = T> typename std::enable_if<!std::is_same<byte, U>::value, bool>::type FromFib(FIBITMAP *image, const byte depth)
 			{
 				FIBITMAP *converted							= nullptr;
 				std::function<int(byte *src, T *dst)> apply = nullptr;
@@ -717,7 +801,7 @@ namespace emergent
 				this->width 	= FreeImage_GetWidth(image);
 				this->height	= FreeImage_GetHeight(image);
 				this->depth		= depth ? depth : this->depth;
-				this->buffer.Resize(this->width * this->height * this->depth);
+				this->buffer.resize(this->width * this->height * this->depth);
 
 				if (std::is_integral<T>::value)
 				{
@@ -764,14 +848,13 @@ namespace emergent
 
 				if (converted)
 				{
-					int x, y;
-					T *b = this->buffer;
+					T *b = this->buffer.data();
 
-					for (y=0; y<height; y++)
+					for (size_t y=0; y<height; y++)
 					{
 						auto bits = FreeImage_GetScanLine(converted, height - y - 1);
 
-						for (x=0; x<width; x++)
+						for (size_t x=0; x<width; x++)
 						{
 							bits	+= apply(bits, b);
 							b		+= this->depth;
@@ -793,16 +876,22 @@ namespace emergent
 			/// is the same type as this then it should be pretty fast since it is a simple buffer copy instead.
 			template <class U> void Copy(const ImageBase<U> &image)
 			{
-				const T max		= std::numeric_limits<T>::max();
-				this->width		= image.width;
-				this->height	= image.height;
-				int size		= this->width * this->height;
-				auto r			= image.buffer.Range();
+				const T max			= std::numeric_limits<T>::max();
+				this->width			= image.width;
+				this->height		= image.height;
+				const size_t size	= this->width * this->height;
+				// auto r			= image.buffer.Range();
 
-				this->buffer.Resize(size * this->depth);
+				// once we no longer require c++14 support
+				// const auto [low, high]	= std::minmax_element(image.buffer.begin(), image.buffer.end());
+				// const auto r			= emg::bounds<U>(*low, *high);
+				const auto minmax	= std::minmax_element(image.buffer.begin(), image.buffer.end());
+				const auto r		= emg::bounds<U>(*minmax.first, *minmax.second);
 
-				U *src = image;
-				T *dst = this->buffer;
+				this->buffer.resize(size * this->depth);
+
+				auto *src = image.Data();
+				auto *dst = this->buffer.data();
 
 				std::function<T(U value)> apply = nullptr;
 				if (r.range > max)		apply = [&](U value) { return (T)lrint(max * r.normalise(value)); };
@@ -811,15 +900,15 @@ namespace emergent
 
 				if (this->depth == image.depth)
 				{
-					size *= this->depth;
-					for (int i=0; i<size; i++)
+					const size_t total = size * this->depth;
+					for (size_t i=0; i<total; i++)
 					{
 						*dst++ = apply(*src++);
 					}
 				}
 				else if (this->depth == 1 && image.depth == 3)
 				{
-					for (int i=0; i<size; i++, src+=3)
+					for (size_t i=0; i<size; i++, src+=3)
 					{
 						*dst++ = (apply(src[0]) + apply(src[1]) + apply(src[2])) / 3;
 					}
@@ -827,7 +916,7 @@ namespace emergent
 				else if (this->depth == 3 && image.depth == 1)
 				{
 					T value;
-					for (int i=0; i<size; i++)
+					for (size_t i=0; i<size; i++)
 					{
 						value = apply(*src++);
 						*dst++ = value;
@@ -848,24 +937,34 @@ namespace emergent
 
 				if (this->depth != image.depth)
 				{
-					int size = this->width * this->height;
-					this->buffer.Resize(size * this->depth);
+					const size_t size = this->width * this->height;
+					this->buffer.resize(size * this->depth);
 
-					T *src = image;
-					T *dst = this->buffer;
+					const T *src	= image;
+					T *dst			= this->buffer.data();
 
 					if (this->depth == 1 && image.depth == 3)
 					{
-						for (int i=0; i<size; i++, src+=3) { *dst++ = (src[0] + src[1] + src[2]) / 3; }
+						for (size_t i=0; i<size; i++, src+=3)
+						{
+							*dst++ = (src[0] + src[1] + src[2]) / 3;
+						}
 					}
 					else if (this->depth == 3 && image.depth == 1)
 					{
-						for (int i=0; i<size; i++, src++) { *dst++ = *src; *dst++ = *src; *dst++ = *src; }
+						for (size_t i=0; i<size; i++, src++, dst+=3)
+						{
+							dst[0] = dst[1] = dst[2] = src[0];
+						}
 					}
 
 				}
-				else this->buffer = image.buffer;
+				else
+				{
+					this->buffer = image.buffer;
+				}
 			}
+
 
 			/// Load a raw image file, expects ImageHeader to be at the beginning
 			bool LoadRaw(std::string path, bool checkDepth)
@@ -875,10 +974,10 @@ namespace emergent
 
 				if (ifs.good())
 				{
-					int size = (int)ifs.seekg(0, std::ios::end).tellg();
+					const auto size = ifs.seekg(0, std::ios::end).tellg();
 					ifs.seekg(0);
 
-					if (size > sizeof(ImageHeader))
+					if (size > (long)sizeof(ImageHeader))
 					{
 						ifs.read((char *)&h, sizeof(ImageHeader));
 
