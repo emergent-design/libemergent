@@ -61,7 +61,7 @@ namespace emergent
 
 			if (out.good())
 			{
-				out.write(src.data(), src.size());
+				out.write((char *)src.data(), src.size());
 				return true;
 			}
 
