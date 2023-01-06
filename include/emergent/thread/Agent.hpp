@@ -21,8 +21,7 @@ namespace emergent
 	// This reverses the ownership hierarchy when using derived classes
 	// of T so that the thread is always exited before the derivative of
 	// T is destroyed (avoiding the issues that can occur when a base class
-	// is responsible for the threading). The constant SLEEP defines the sleep
-	// time for the thread in microseconds.
+	// is responsible for the threading).
 	//
 	// A subject base class is expected to implement the following interface
 	// {

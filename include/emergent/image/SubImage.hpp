@@ -12,5 +12,8 @@ namespace emergent::image
 		size_t width	= 0;		// Width of the sub-image
 		size_t height	= 0;		// Height of the sub-image
 		size_t row		= 0;		// Row size of the original source image data
+
+
+		operator bool() const { return data; }
 	};
 }

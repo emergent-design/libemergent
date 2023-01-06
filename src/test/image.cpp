@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include "doctest.h"
 #include <emergent/image/Image.hpp>
 
 using emg::Image;
@@ -7,7 +7,7 @@ using emg::byte;
 using emg::rgb;
 
 
-TEST_CASE("constructing an image", "[image]")
+TEST_CASE("constructing an image")
 {
 	ImageBase<byte> src(3, 10, 10);
 	src = 255;	// Assign 255 to all values in the image
@@ -16,119 +16,117 @@ TEST_CASE("constructing an image", "[image]")
 	REQUIRE(src.Size() == 100);
 
 
-	SECTION("construct default byte image")
+	SUBCASE("construct default byte image")
 	{
 		ImageBase<byte> img;
 
-		REQUIRE(img.Depth() == 1);
-		REQUIRE(img.Size() == 0);
+		CHECK(img.Depth() == 1);
+		CHECK(img.Size() == 0);
 	}
 
-	SECTION("construct image by size")
+	SUBCASE("construct image by size")
 	{
 		ImageBase<byte> img(3, 10, 10);
 
-		REQUIRE(img.Depth() == 3);
-		REQUIRE(img.Size() == 100);
+		CHECK(img.Depth() == 3);
+		CHECK(img.Size() == 100);
 	}
 
-	SECTION("construct image of larger integer type")
+	SUBCASE("construct image of larger integer type")
 	{
 		ImageBase<uint16_t> img(1, 10, 10);
 
-		REQUIRE(img.Depth() == 1);
-		REQUIRE(img.Size() == 100);
+		CHECK(img.Depth() == 1);
+		CHECK(img.Size() == 100);
 	}
 
-	SECTION("construct image from another image")
+	SUBCASE("construct image from another image")
 	{
 		ImageBase<byte> dst(src);
 
-		REQUIRE(dst.Data() != src.Data());
-		REQUIRE(dst.Depth() == 3);
-		REQUIRE(dst.Size() == 100);
-		REQUIRE(dst.Value(0, 0) == 255);
+		CHECK(dst.Data() != src.Data());
+		CHECK(dst.Depth() == 3);
+		CHECK(dst.Size() == 100);
+		CHECK(dst.Value(0, 0) == 255);
 	}
 
-	SECTION("construct image from another image of a different type")
+	SUBCASE("construct image from another image of a different type")
 	{
 		ImageBase<uint16_t> dst(src);
 
-		REQUIRE(dst.Depth() == 3);
-		REQUIRE(dst.Size() == 100);
-		REQUIRE(dst.Value(0, 0) == 255);
+		CHECK(dst.Depth() == 3);
+		CHECK(dst.Size() == 100);
+		CHECK(dst.Value(0, 0) == 255);
 	}
 
-	SECTION("construct fixed depth image from another image")
+	SUBCASE("construct fixed depth image from another image")
 	{
 		Image<byte, rgb> dst(src);
 
-		REQUIRE(dst.Depth() == 3);
-		REQUIRE(dst.Size() == 100);
-		REQUIRE(dst.Value(0, 0, 1) == 255);
+		CHECK(dst.Depth() == 3);
+		CHECK(dst.Size() == 100);
+		CHECK(dst.Value(0, 0, 1) == 255);
 	}
 }
 
 
 
-TEST_CASE("assigning to an image", "[image]")
+TEST_CASE("assigning to an image")
 {
 	ImageBase<byte> src(3, 10, 10);
 	src = 255;	// Assign 255 to all values in the image
 
-	SECTION("assign an image of the same type")
+	SUBCASE("assign an image of the same type")
 	{
 		ImageBase<byte> dst;
 
 		dst = src;
 
-		REQUIRE(dst.Depth() == 3);
-		REQUIRE(dst.Size() == 100);
-		REQUIRE(dst.Value(0, 0) == 255);
+		CHECK(dst.Depth() == 3);
+		CHECK(dst.Size() == 100);
+		CHECK(dst.Value(0, 0) == 255);
 	}
 
-	SECTION("assign an image of a different type")
+	SUBCASE("assign an image of a different type")
 	{
 		ImageBase<uint16_t> dst;
 
 		dst = src;
 
-		REQUIRE(dst.Depth() == 3);
-		REQUIRE(dst.Size() == 100);
-		REQUIRE(dst.Value(0, 0) == 255);
+		CHECK(dst.Depth() == 3);
+		CHECK(dst.Size() == 100);
+		CHECK(dst.Value(0, 0) == 255);
 	}
 
-	SECTION("assign a single value to the entire image")
+	SUBCASE("assign a single value to the entire image")
 	{
 		ImageBase<byte> dst(3, 10, 10);
 
 		dst = 128;
 
-		REQUIRE(dst.IsBlank(128));
+		CHECK(dst.IsBlank(128));
 	}
 
-	SECTION("clear an image (reset to all zeros)")
+	SUBCASE("clear an image (reset to all zeros)")
 	{
-		REQUIRE(src.Value(4, 4) == 255);
+		CHECK(src.Value(4, 4) == 255);
 
 		src.Clear();
 
-		REQUIRE(src.IsBlank());
+		CHECK(src.IsBlank());
 	}
 }
 
 
 
-TEST_CASE("accessing raw data", "[image]")
+TEST_CASE("accessing raw data")
 {
-	SECTION("an empty image provides a null pointer")
+	SUBCASE("an empty image provides a null pointer")
 	{
 		ImageBase<byte> test;
-		REQUIRE((byte *)test == nullptr);
-		REQUIRE(test.Data() == nullptr);
+		CHECK((byte *)test == nullptr);
+		CHECK(test.Data() == nullptr);
 	}
-
-
 }
 
 			/// Operator override to support implicit and explicit typecasting
@@ -145,7 +143,7 @@ TEST_CASE("accessing raw data", "[image]")
 
 
 
-TEST_CASE("image property access", "[image]")
+TEST_CASE("image property access")
 {
 	// get image depth, width, height and size
 }
@@ -163,18 +161,18 @@ TEST_CASE("image property access", "[image]")
 
 
 
-TEST_CASE("image resizing", "[image]")
+TEST_CASE("image resizing")
 {
 	ImageBase<byte> src(3, 10, 10);
 
 	// resize an image - keep depth/change depth
 
 
-	SECTION("resizing to an invalid dimension will clear the image")
+	SUBCASE("resizing to an invalid dimension will clear the image")
 	{
 		src.Resize(-10, -10);
 
-		REQUIRE(src.Size() == 0);
+		CHECK(src.Size() == 0);
 	}
 
 
@@ -186,7 +184,7 @@ TEST_CASE("image resizing", "[image]")
 
 
 
-TEST_CASE("image statistics", "[image]")
+TEST_CASE("image statistics")
 {
 	// max / min value
 	// count based on predicate
@@ -215,7 +213,7 @@ TEST_CASE("image statistics", "[image]")
 // 			distribution Stats(Buffer<byte> *mask = nullptr) const
 
 
-TEST_CASE("image modification", "[image]")
+TEST_CASE("image modification")
 {
 	// the OR/AND should be using const images for the modifiers...
 
@@ -263,7 +261,7 @@ TEST_CASE("image modification", "[image]")
 // 			/// greyscale and RGB).
 // 			bool Normalise()
 
-// 			/// Truncate the height of the image down to the given height. Since this just requires
+// 			/// Truncate the height of the image down to the given height. Since this just CHECKs
 // 			/// a change of the height value and a cut of the buffer it allows you to chop the
 // 			/// bottom off of an image without needing to use an additional image buffer.
 // 			bool Truncate(int height)
@@ -276,7 +274,7 @@ TEST_CASE("image modification", "[image]")
 
 
 
-TEST_CASE("image inspection", "[image]")
+TEST_CASE("image inspection")
 {
 	// inspect a region of the image using the provided operation
 	// retrieve value from specific coordinates and channel
@@ -301,9 +299,9 @@ TEST_CASE("image inspection", "[image]")
 // 			template <byte N> std::array<T, N> InterpolateAll(double x, double y) const
 
 
-TEST_CASE("image i/o", "[image]")
+TEST_CASE("image i/o")
 {
-	SECTION("construct image from path")
+	SUBCASE("construct image from path")
 	{
 
 	}
@@ -318,11 +316,11 @@ TEST_CASE("image i/o", "[image]")
 // 			/// Load an image from file. Uses the freeimage library to attempt loading and conversion
 // 			/// of the image. It should cope with any standard image formats. If depth is 0 then the
 // 			/// depth of this image will be left as it is, otherwise it will attempt to convert to the
-// 			/// required depth where necessary.
+// 			/// CHECKd depth where necessary.
 // 			virtual bool Load(std::string path, byte depth = 0)
 
 // 			/// Load an image from memory buffer. If depth is 0 then the depth of this image will be left
-// 			/// as it is, otherwise it will attempt to convert to the required depth where necessary.
+// 			/// as it is, otherwise it will attempt to convert to the CHECKd depth where necessary.
 // 			virtual bool Load(Buffer<byte> &buffer, byte depth = 0)
 
 // 			/// Load a raw image file, expects ImageHeader to be at the beginning
@@ -340,7 +338,7 @@ TEST_CASE("image i/o", "[image]")
 // 			bool SaveRaw(std::string path)
 
 
-TEST_CASE("image iteration", "[image]")
+TEST_CASE("image iteration")
 {
 
 }
