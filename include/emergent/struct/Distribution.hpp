@@ -1,6 +1,5 @@
 #pragma once
 
-// #include <emergent/struct/Buffer.hpp>
 #include <emergent/Maths.hpp>
 #include <vector>
 
@@ -23,15 +22,8 @@ namespace emergent
 		distribution() {}
 
 
-		/// Constructor with automatic analysis of supplied buffer
-		// template <class T> distribution(const Buffer<T> &data, Buffer<byte> *mask = nullptr)
-		// {
-		// 	this->analyse(data, mask);
-		// }
-
-
-		/// Constructor with automatic analysis of supplied data
-		template <class T> distribution(const std::vector<T> &data, std::vector<byte> *mask = nullptr)
+		/// Constructor with automatic analysis of supplied data - requires that data is a contiguous container
+		template <class T> distribution(const T &data, std::vector<byte> *mask = nullptr)
 		{
 			this->analyse(data, mask);
 		}
@@ -44,21 +36,17 @@ namespace emergent
 		}
 
 
-		/// Generate stats from a buffer
-		// template <class T> bool analyse(const Buffer<T> &data, Buffer<byte> *mask)
-		// {
-		// 	if (mask && mask->Size() != data.Size()) return false;
-
-		// 	return this->analyse(data.Data(), data.Size(), mask ? mask->Data() : nullptr);
-		// }
-
-
-		/// Generate stats from a vector
-		template <class T> bool analyse(const std::vector<T> &data, std::vector<byte> *mask = nullptr)
+		/// Generate stats from a container - requires that data is contiguous
+		template <class T> bool analyse(const T &data, std::vector<byte> *mask = nullptr)
 		{
-			if (mask && mask->size() != data.size()) return false;
+			static_assert(is_contiguous<T>, "source must be a contiguous container type");
 
-			return this->analyse(&data.front(), data.size(), mask ? &mask->front() : nullptr);
+			if (mask && mask->size() != data.size())
+			{
+				return false;
+			}
+
+			return this->analyse(data.data(), data.size(), mask ? mask->data() : nullptr);
 		}
 
 
@@ -109,8 +97,8 @@ namespace emergent
 			this->samples	= size;
 			this->min		= min;
 			this->max		= max;
-			this->mean		= size? sum / size : 0;
-			this->variance	= size? (squared / size) - (this->mean * this->mean) : 0;
+			this->mean		= size ? sum / size : 0;
+			this->variance	= size ? (squared / size) - (this->mean * this->mean) : 0;
 
 			return true;
 		}

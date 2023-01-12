@@ -35,38 +35,38 @@ namespace redis
 			}
 
 
-			template <typename T> bool Set(const string &key, Buffer<T> &buffer)
-			{
-				static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");
+			// template <typename T> bool Set(const string &key, Buffer<T> &buffer)
+			// {
+			// 	static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");
 
-				return Command("SET %s %b", key.c_str(), buffer.Data(), (size_t)(buffer.Size() * sizeof(T))).Ok();
-			}
-
-
-			template <typename T> bool Get(const string &key, Buffer<T> &buffer)
-			{
-				static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");
-
-				bool result = false;
-				auto reply	= this->GetBinary(key);
-
-				if (reply)
-				{
-					if (reply->len % sizeof(T) == 0)
-					{
-						buffer.Set((T *)reply->str, reply->len / sizeof(T));
-						result = true;
-					}
-					else Log::Error("Attempt to retrieve buffer failed at '%s', type size mismatch", key);
-
-					freeReplyObject(reply);
-				}
-
-				return result;
-			}
+			// 	return Command("SET %s %b", key.c_str(), buffer.Data(), (size_t)(buffer.Size() * sizeof(T))).Ok();
+			// }
 
 
-			template <typename T> bool Set(const string &key, std::vector<T> &buffer)
+			// template <typename T> bool Get(const string &key, Buffer<T> &buffer)
+			// {
+			// 	static_assert(std::is_arithmetic<T>::value, "Buffer type must be numeric");
+
+			// 	bool result = false;
+			// 	auto reply	= this->GetBinary(key);
+
+			// 	if (reply)
+			// 	{
+			// 		if (reply->len % sizeof(T) == 0)
+			// 		{
+			// 			buffer.Set((T *)reply->str, reply->len / sizeof(T));
+			// 			result = true;
+			// 		}
+			// 		else Log::Error("Attempt to retrieve buffer failed at '%s', type size mismatch", key);
+
+			// 		freeReplyObject(reply);
+			// 	}
+
+			// 	return result;
+			// }
+
+
+			template <typename T> bool Set(const string &key, const std::vector<T> &buffer)
 			{
 				static_assert(std::is_arithmetic<T>::value, "Vector type must be numeric");
 
@@ -98,7 +98,7 @@ namespace redis
 			}
 
 
-			template <typename T> bool Set(const string &key, ImageBase<T> &image)
+			template <typename T> bool Set(const string &key, const ImageBase<T> &image)
 			{
 				ImageHeader header = { image.Depth(), sizeof(T), (uint16_t)image.Width(), (uint16_t)image.Height() };
 
@@ -133,7 +133,7 @@ namespace redis
 			}
 
 
-			template <typename T> long Publish(const string &channel, ImageBase<T> &image)
+			template <typename T> long Publish(const string &channel, const ImageBase<T> &image)
 			{
 				ImageHeader header = { image.Depth(), sizeof(T), (uint16_t)image.Width(), (uint16_t)image.Height() };
 

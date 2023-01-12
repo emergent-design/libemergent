@@ -9,7 +9,7 @@ namespace emergent
 	///
 	/// Only numeric types of image are permitted, a compiler error
 	/// will occur otherwise.
-	template <class T = byte, byte D = 1> class Image : public ImageBase<T>
+	template <typename T = byte, byte D = 1> class Image : public ImageBase<T>
 	{
 		public:
 			/// Default constructor
@@ -25,14 +25,14 @@ namespace emergent
 
 
 			/// Copy constructor with automatic type conversion
-			template <class U> Image(const ImageBase<U> &image) : ImageBase<T>(D)
+			template <typename U> Image(const ImageBase<U> &image) : ImageBase<T>(D)
 			{
 				this->Copy(image);
 			}
 
 
 			/// Assignment override with type and depth conversion
-			template <class U> Image<T, D> &operator=(const ImageBase<U> &image)
+			template <typename U> Image<T, D> &operator=(const ImageBase<U> &image)
 			{
 				this->Copy(image);
 				return *this;

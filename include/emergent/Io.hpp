@@ -1,6 +1,8 @@
 #pragma once
+#include <emergent/Emergent.hpp>
 #include <emergent/FS.hpp>
 #include <fstream>
+
 
 
 namespace emergent
@@ -10,20 +12,8 @@ namespace emergent
 		// Load a whole file into a contiguous buffer type (string/vector)
 		template <typename T> static bool Load(T &dst, const fs::path &path)
 		{
-			static_assert(
-				std::is_base_of<
-					std::random_access_iterator_tag,
-					typename std::iterator_traits<
-						decltype(std::begin(std::declval<T const>()))
-					>::iterator_category
-				>::value,
-				"destination must be a contiguous container type"
-			);
-
-			static_assert(
-				sizeof(typename T::value_type) == 1,
-				"destination must be a byte buffer"
-			);
+			static_assert(is_contiguous<T>, "destination must be a contiguous container type");
+			static_assert(sizeof(typename T::value_type) == 1, "destination must be a byte buffer");
 
 			std::ifstream in(path, std::ios::in | std::ios::binary);
 
@@ -40,22 +30,11 @@ namespace emergent
 
 
 		// Save a contiguous buffer to file
+
 		template <typename T> static bool Save(const T &src, const fs::path &path)
 		{
-			static_assert(
-				std::is_base_of<
-					std::random_access_iterator_tag,
-					typename std::iterator_traits<
-						decltype(std::begin(std::declval<T const>()))
-					>::iterator_category
-				>::value,
-				"source must be a contiguous container type"
-			);
-
-			static_assert(
-				sizeof(typename T::value_type) == 1,
-				"source must be a byte buffer"
-			);
+			static_assert(is_contiguous<T>, "source must be a contiguous container type");
+			static_assert(sizeof(typename T::value_type) == 1, "source must be a byte buffer");
 
 			std::ofstream out(path, std::ios::out | std::ios::binary);
 

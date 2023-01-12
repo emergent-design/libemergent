@@ -1,15 +1,16 @@
 #pragma once
 
+
 #include <emergent/Emergent.hpp>
 #include <emergent/image/Colours.hpp>
 #include <emergent/image/Iterator.hpp>
-// #include <emergent/struct/Buffer.hpp>
+#include <emergent/image/Buffer.hpp>
+#include <emergent/image/SubImage.hpp>
 #include <emergent/struct/Distribution.hpp>
-#include <emergent/image/Operations.hpp>
+#include <emergent/struct/Bounds.hpp>
 #include <FreeImage.h>
-#include <cstring>
 
-// #include <iostream>
+#include <cstring>
 #include <utility>
 #include <algorithm>
 
@@ -27,12 +28,13 @@ namespace emergent
 
 
 	/// Base class for images of a given arithmetic type.
-	template <class T = byte> class ImageBase
+	template <typename T = byte> class ImageBase
 	{
 		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric");
 		static_assert(!std::is_same<T, bool>::value, "Image type cannot be bool due to std::vector specialisation");
 
 		public:
+
 
 			ImageBase(const byte depth = 1, const int width = 0, const int height = 0) : depth(depth)
 			{
@@ -71,7 +73,7 @@ namespace emergent
 
 			/// Copy constructor with automatic type conversion. The depth
 			/// of the source image is copied.
-			template <class U> ImageBase(const ImageBase<U> &image)
+			template <typename U> ImageBase(const ImageBase<U> &image)
 			{
 				this->depth = image.depth;
 				this->Copy(image);
@@ -91,7 +93,7 @@ namespace emergent
 
 
 			/// Assignment override with type conversion.
-			template <class U> ImageBase<T> &operator=(const ImageBase<U> &image)
+			template <typename U> ImageBase<T> &operator=(const ImageBase<U> &image)
 			{
 				this->depth = image.depth;
 				this->Copy(image);
@@ -104,8 +106,6 @@ namespace emergent
 			ImageBase<T> &operator=(const T value)
 			{
 				std::fill(this->buffer.begin(), this->buffer.end(), value);
-				// this->buffer.assign(value);
-				// this->buffer = value;
 				return *this;
 			}
 
@@ -120,7 +120,7 @@ namespace emergent
 
 			/// Return the actual internal buffer.
 			/// WARNING: If you modify the size of this buffer you will corrupt the owner image
-			std::vector<T> &Internal() { return this->buffer; }
+			auto &Internal() { return this->buffer; }
 
 			/// Return the image depth
 			byte Depth() const { return this->depth; }
@@ -142,9 +142,8 @@ namespace emergent
 			}
 
 
-			/// Resizes the image buffers but destroys any existing image data.
+			/// Resizes the image buffers but may destroy any existing image data.
 			/// A depth of 0 will keep the existing depth.
-			// virtual void Resize(const size_t width, const size_t height, const byte depth = 0)
 			virtual void Resize(const int width, const int height, const byte depth = 0)
 			{
 				this->depth	= depth ? depth : this->depth;
@@ -159,71 +158,130 @@ namespace emergent
 				{
 					this->width		= 0;
 					this->height	= 0;
-					this->buffer.clear();
+					this->buffer.resize(0);
 				}
 			}
 
 
 			/// Returns the maximum value in the current image data (regardless of image depth).
-			T Max() const { return Operations::Max(this->buffer); }
+			T Max() const
+			{
+				return *std::max_element(this->cbegin(), this->cend());
+			}
 
 			/// Returns the minimum value in the current image data (regardless of image depth).
-			T Min() const { return Operations::Min(this->buffer); }
+			T Min() const
+			{
+				return *std::min_element(this->cbegin(), this->cend());
+			}
 
 			/// Count the number of values in the current image data (regardless of image depth)
 			/// that match the supplied predicate.
-			int Count(std::function<bool(T value)> predicate) const { return Operations::Count(this->buffer, predicate); }
+			int Count(std::function<bool(T value)> predicate) const
+			{
+				return std::count_if(this->cbegin(), this->cend(), predicate);
+			}
 
 			/// Count the number of zero values in the current image data (regardless of image depth)
-			int ZeroCount() const { return Operations::ZeroCount(this->buffer); }
+			int ZeroCount() const
+			{
+				return std::count_if(this->cbegin(), this->cend(), std::logical_not<T> {});
+			}
 
-			///Check if all the pixels in the image are set to the same value (regardless of image depth)
-			bool IsBlank(T reference = 0) const { return Operations::IsBlank(this->buffer, reference); }
+			/// Check if all the pixels in the image are set to the same value (regardless of image depth)
+			bool IsBlank(const T reference = 0) const
+			{
+				return std::all_of(
+					this->buffer.cbegin(), this->buffer.cend(),
+					[&](auto v) { return v == reference; }
+				);
+			}
 
 			/// Clamp the current image data (regardless of image depth) to the supplied
 			/// lower and upper limits.
-			void Clamp(T lower, T upper) { Operations::Clamp(this->buffer, lower, upper); }
+			void Clamp(T lower, T upper)
+			{
+				for (auto &d : this->buffer)
+				{
+					#if __cpp_lib_clamp >= 201603L
+						d = std::clamp(d, lower, upper);
+					#else
+						d = d < lower ? lower : (d > upper ? upper : d);
+					#endif
+				}
+			}
 
 			/// Shift all of the values in the image data (regardless of image depth) by the
 			/// specified amount.
-			void Shift(int value) { Operations::Shift(this->buffer, value); }
+			void Shift(int value)
+			{
+				for (auto &d : this->buffer)
+				{
+					d = Maths::clamp<T>(d + value);
+				}
+			}
 
 			/// Threshold this image at the given value
-			void Threshold(T threshold, T high = 255, T low = 0) { Operations::Threshold(this->buffer, threshold, high, low); }
+			void Threshold(T threshold, T high = 255, T low = 0)
+			{
+				for (auto &d : this->buffer)
+				{
+					d = d < threshold ? low : high;
+				}
+			}
 
 			/// Inverts this image
-			void Invert() { Operations::Invert(this->buffer); }
+			void Invert()
+			{
+				std::transform(this->cbegin(), this->cend(), this->begin(), std::bit_not<T> {});
+			}
 
 
 			/// Arimetic OR of this image with a modifier image. The images should be of the
-			/// same depth, but do not have to be as long as the underlying buffer sizes are
-			/// the same. If they are not then an exception will be thrown.
-			void OR(ImageBase<T> &modifier) { Operations::OR(this->buffer, modifier.buffer); }
+			/// same size and if not then it will return false.
+			bool OR(const ImageBase<T> &modifier)
+			{
+				if (modifier.buffer.size() != this->buffer.size())
+				{
+					return false;
+				}
+
+				std::transform(this->cbegin(), this->cend(), modifier.cbegin(), this->begin(), std::bit_or<T> {});
+				return true;
+			}
 
 
 			/// Arimetic AND of this image with a modifier image. The images should be of the
-			/// same depth, but do not have to be as long as the underlying buffer sizes are
-			/// the same. If they are not then an exception will be thrown.
-			void AND(ImageBase<T> &modifier) { Operations::AND(this->buffer, modifier.buffer); }
-
-
-			/// Variance normalise the image to a target variance. Each channel is normalised independently
-			/// (although it assumes only greyscale and RGB).
-			bool VarianceNormalise(double targetVariance)
+			/// same size and if not then it will return false.
+			bool AND(const ImageBase<T> &modifier)
 			{
-				return this->depth == 3
-					? Operations::VarianceNormalise<3>(this->buffer, targetVariance)
-					: Operations::VarianceNormalise<1>(this->buffer, targetVariance);
+				if (modifier.buffer.size() != this->buffer.size())
+				{
+					return false;
+				}
+
+				std::transform(this->cbegin(), this->cend(), modifier.cbegin(), this->begin(), std::bit_and<T> {});
+				return true;
 			}
 
-			/// Normalise the image data. Each channel is normalised independently (although it assumes only
-			/// greyscale and RGB).
-			bool Normalise()
-			{
-				return this->depth == 3
-					? Operations::Normalise<3>(this->buffer)
-					: Operations::Normalise<1>(this->buffer);
-			}
+
+			// /// Variance normalise the image to a target variance. Each channel is normalised independently
+			// /// (although it assumes only greyscale and RGB).
+			// bool VarianceNormalise(double targetVariance)
+			// {
+			// 	return this->depth == 3
+			// 		? Operations::VarianceNormalise<3>(this->buffer, targetVariance)
+			// 		: Operations::VarianceNormalise<1>(this->buffer, targetVariance);
+			// }
+
+			// /// Normalise the image data. Each channel is normalised independently (although it assumes only
+			// /// greyscale and RGB).
+			// bool Normalise()
+			// {
+			// 	return this->depth == 3
+			// 		? Operations::Normalise<3>(this->buffer)
+			// 		: Operations::Normalise<1>(this->buffer);
+			// }
 
 
 			/// Calculate the distribution statistics of the image mask can be optionally passed in;
@@ -235,25 +293,55 @@ namespace emergent
 			}
 
 
-			// Apply an operation to inspect a given region of the image. The region must be fully
-			// contained within the image and if it is invalid then `operation` will not be invoked.
-			void Inspect(int rx, int ry, int rw, int rh, std::function<void(const T*)> operation) const
+			// Provides a helper structure for dealing with a sub-image. The region must be fully
+			// contained within the image, if it is invalid then the result will be empty and
+			// will test as false.
+			const image::SubImage<T> SubImage(const int rx, const int ry, const int rw, const int rh)
 			{
-				if (rx < 0 || rx+rw > this->width || ry < 0 || ry+rh > this->height)
+				#if __cpp_lib_as_const >= 201510L
+					const auto sub = std::as_const(*this).SubImage(rx, ry, rw, rh);
+				#else
+					const auto sub = (const ImageBase<T>*)(this)->SubImage(rx, ry, rw, rh);
+				#endif
+
+				return { const_cast<T*>(sub.data), sub.depth, sub.width, sub.height, sub.row };
+			}
+
+
+			// Provides a helper structure for dealing with a sub-image. The region must be fully
+			// contained within the image, if it is invalid then the result will be empty and
+			// will test as false.
+			const image::SubImage<const T> SubImage(const int rx, const int ry, const int rw, const int rh) const
+			{
+				if (rx < 0 || rx+rw > this->width || ry < 0 || ry+rh > this->height || rw < 0 || rh < 0)
 				{
-					return;
+					return {};
 				}
 
-				int x, y;
-				const int depth = this->depth;
-				const int jump	= (this->width - rw) * depth;
-				const T *pb		= this->buffer.data() + (this->width * ry + rx) * depth;
+				const size_t row = this->width * this->depth;
 
-				for (y=0; y<rh; y++, pb+=jump)
+				return {
+					/*.data		=*/ this->buffer.data() + ry * row + rx * this->depth,
+					/*.depth	=*/ this->depth,
+					/*.width	=*/ rw,
+					/*.height	=*/ rh,
+					/*.row		=*/ row
+				};
+			}
+
+
+			// Apply an operation to inspect a given region of the image. The region must be fully
+			// contained within the image and if it is invalid then `operation` will not be invoked.
+			void Inspect(const int rx, const int ry, const int rw, const int rh, std::function<void(const T*)> operation) const
+			{
+				if (const auto sub = this->SubImage(rx, ry, rw, rh))
 				{
-					for (x=0; x<rw; x++, pb+=depth)
+					for (size_t y=0; y<sub.height; y++)
 					{
-						operation(pb);
+						for (auto p : sub.Row(y))
+						{
+							operation(p);
+						}
 					}
 				}
 			}
@@ -262,16 +350,13 @@ namespace emergent
 			/// Truncate the height of the image down to the given height. Since this just requires
 			/// a change of the height value and a cut of the buffer it allows you to chop the
 			/// bottom off of an image without needing to use an additional image buffer.
-			bool Truncate(int height)
+			bool Truncate(const int height)
 			{
 				if (height < this->height && height > 0)
 				{
-					// if (this->buffer.Truncate(height * this->width * this->depth))
 					this->buffer.resize(height * this->width * this->depth);
-					// {
-						this->height = height;
-						return true;
-					// }
+					this->height = height;
+					return true;
 				}
 
 				return false;
@@ -282,7 +367,7 @@ namespace emergent
 			/// Any values that drop off the edges are ignored. If sum is true then
 			/// values are summed into the destination. Only image depths of 3 and 1 are
 			/// supported unless sum is false and the depths are the same.
-			ImageBase<T> &Insert(const ImageBase<T> &image, int x, int y, bool sum = false)
+			ImageBase<T> &Insert(const ImageBase<T> &image, const int x, const int y, const bool sum = false)
 			{
 				if (x >= 0 && x < this->width && y >= 0 && y < this->height)
 				{
@@ -325,8 +410,8 @@ namespace emergent
 
 						if (convert)
 						{
-							int js = ls - w * ds;
-							int ji = li - w * di;
+							const int js = ls - w * ds;
+							const int ji = li - w * di;
 
 							for (j=0; j<h; j++, pi+=ji, ps+=js)
 							{
@@ -346,7 +431,7 @@ namespace emergent
 			/// Gets the value of a pixel for a specific channel but supports values outside the image dimensions,
 			/// if mirror is true the pixel values are mirrored, otherwise they are smeared. Weird things will happen
 			/// if a value that is twice the width/height outside the image is requested.
-			T Value(int x, int y, byte channel = 0, bool mirror = true) const
+			T Value(const int x, const int y, const byte channel = 0, const bool mirror = true) const
 			{
 				if (channel < this->depth)
 				{
@@ -373,7 +458,7 @@ namespace emergent
 
 
 			/// Interpolate the pixel value of a specific channel at the given coordinates.
-			T Interpolate(double x, double y, byte channel = 0) const
+			T Interpolate(const double x, const double y, const byte channel = 0) const
 			{
 				if (x >= 0 && x < this->width - 1 && y >= 0 && y < this->height - 1 && channel < this->depth)
 				{
@@ -397,7 +482,7 @@ namespace emergent
 			/// Interpolate the pixel value of all channels at the given coordinates. The size
 			/// N must match the depth of this image and the coordinates must be valid otherwise
 			/// zeroes will be returned.
-			template <byte N> std::array<T, N> InterpolateAll(double x, double y) const
+			template <byte N> std::array<T, N> InterpolateAll(const double x, const double y) const
 			{
 				std::array<T, N> result = { 0 };
 
@@ -647,26 +732,15 @@ namespace emergent
 			}
 
 
-			auto begin()		{ return this->buffer.begin(); }
-			auto end()			{ return this->buffer.end(); }
-			auto begin() const	{ return this->buffer.begin(); }
-			auto end() const	{ return this->buffer.end(); }
+			[[nodiscard]] auto begin()			{ return this->buffer.begin(); }
+			[[nodiscard]] auto end()			{ return this->buffer.end(); }
+			[[nodiscard]] auto begin() const	{ return this->buffer.begin(); }
+			[[nodiscard]] auto end() const		{ return this->buffer.end(); }
+			[[nodiscard]] auto cbegin() const	{ return this->buffer.cbegin(); }
+			[[nodiscard]] auto cend() const		{ return this->buffer.cend(); }
 
 
 		protected:
-
-			// Image depth
-			byte depth = 1;
-
-			// Image width
-			size_t width = 0;
-
-			// Image height
-			size_t height = 0;
-
-			// Buffer for the actual image data
-			std::vector<T> buffer;
-
 
 
 			template <typename U = T> typename std::enable_if<std::is_same<byte, U>::value, FIBITMAP *>::type ToFib() const
@@ -780,12 +854,6 @@ namespace emergent
 						{
 							std::swap(p[0], p[2]);
 						}
-						// byte *end = this->buffer.data() + this->width * this->height * this->depth;
-
-						// for (byte *data = this->buffer.data(); data < end; data += this->depth)
-						// {
-						// 	std::swap(data[0], data[2]);
-						// }
 					}
 				#endif
 
@@ -874,7 +942,7 @@ namespace emergent
 			/// image to a greyscale byte image it will first convert from int to byte by normalising the values
 			/// and scaling to byte (if necessary). Then it will convert from RGB to greyscale. If the source image
 			/// is the same type as this then it should be pretty fast since it is a simple buffer copy instead.
-			template <class U> void Copy(const ImageBase<U> &image)
+			template <typename U> void Copy(const ImageBase<U> &image)
 			{
 				const T max			= std::numeric_limits<T>::max();
 				this->width			= image.width;
@@ -957,7 +1025,6 @@ namespace emergent
 							dst[0] = dst[1] = dst[2] = src[0];
 						}
 					}
-
 				}
 				else
 				{
@@ -1005,8 +1072,20 @@ namespace emergent
 			}
 
 
+			// Image depth
+			byte depth = 1;
+
+			// Image width
+			size_t width = 0;
+
+			// Image height
+			size_t height = 0;
+
+			// Buffer for the actual image data
+			image::Buffer<T> buffer;
+
 			/// Allows the private members of this class
 			/// to be accessed by other template variants
-			template<class U> friend class ImageBase;
+			template<typename U> friend class ImageBase;
 	};
 }
