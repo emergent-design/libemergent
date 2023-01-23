@@ -1,3 +1,15 @@
+libemergent0 (0.1.0) unstable; urgency=medium
+
+  * New, simpler buffer for images which follows container conventions
+  * Unit tests for the new buffer structure have been included
+  * The old Buffer implementation is now deprecated
+  * Added a SubImage helper to encapsulate common values when dealing with a 
+    sub-image. ImageBase<> can generate a SubImage as required.
+  * Added Row/Column/Pixel iterators to ImageBase<>
+  * Switched to the doctest unit test framework
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 23 Jan 2023 12:30:31 +0000
+
 libemergent0 (0.0.43) unstable; urgency=medium
 
   * Packaging updates
