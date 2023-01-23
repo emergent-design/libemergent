@@ -2,7 +2,8 @@
 #include <iterator>
 
 
-namespace emergent::image
+// namespace emergent::image  // >= c++17 only :(
+namespace emergent { namespace image
 {
 	// An iterator for images - uses an arbitrary step size which can
 	// be used by ImageBase to create an iterator for both rows or columns
@@ -57,4 +58,4 @@ namespace emergent::image
 		iterator<T> begin() { return iterator<T>(data, step); }
 		iterator<T> end()	{ return iterator<T>(data + count * step, step); }
 	};
-}
+}}
