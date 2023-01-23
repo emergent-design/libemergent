@@ -320,13 +320,23 @@ namespace emergent
 
 				const size_t row = this->width * this->depth;
 
-				return {
-					/*.data		=*/ this->buffer.data() + ry * row + rx * this->depth,
-					/*.depth	=*/ this->depth,
-					/*.width	=*/ rw,
-					/*.height	=*/ rh,
-					/*.row		=*/ row
-				};
+				#if __cpp_designated_initializers >= 201707L
+					return {
+						.data	= this->buffer.data() + ry * row + rx * this->depth,
+						.depth	= this->depth,
+						.width	= rw,
+						.height	= rh,
+						.row	= row
+					};
+				#else
+					return {
+						this->buffer.data() + ry * row + rx * this->depth,
+						this->depth,
+						rw,
+						rh,
+						row
+					};
+				#endif
 			}
 
 

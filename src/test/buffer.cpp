@@ -168,7 +168,7 @@ TEST_SUITE("buffer")
 			}));
 		}
 
-		SUBCASE("can iterator over a const buffer")
+		SUBCASE("can iterate over a const buffer")
 		{
 			Buffer<byte> buffer(8);
 			std::fill(buffer.begin(), buffer.end(), 42);

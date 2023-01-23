@@ -30,7 +30,6 @@ namespace emergent
 
 
 		// Save a contiguous buffer to file
-
 		template <typename T> static bool Save(const T &src, const fs::path &path)
 		{
 			static_assert(is_contiguous<T>, "source must be a contiguous container type");
