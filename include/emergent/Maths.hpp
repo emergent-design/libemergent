@@ -47,7 +47,7 @@ namespace emergent
 
 
 			/// Lookup table for sine values where the index is the angle in degrees (0-359)
-			static inline const double sine(unsigned int angle)
+			static inline double sine(unsigned int angle)
 			{
 				static const std::array<double, 360> SINES {{
 					 0,            0.017452406,  0.034899497,  0.052335956,  0.069756474,  0.087155743,  0.104528463,  0.121869343,  0.139173101,  0.156434465,
@@ -93,7 +93,7 @@ namespace emergent
 
 
 			/// Lookup table for cosine values where the index is the angle in degrees (0-359)
-			static inline const double cosine(unsigned int angle)
+			static inline double cosine(unsigned int angle)
 			{
 				return sine(angle + 90);
 			}

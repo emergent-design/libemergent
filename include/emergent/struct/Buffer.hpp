@@ -3,14 +3,14 @@
 #include <emergent/Emergent.hpp>
 #include <emergent/struct/Bounds.hpp>
 
-#include <fstream>
-#include <cstring>
+// #include <fstream>
+// #include <cstring>
 
 
 namespace emergent
 {
 	/// Templated buffer implementation
-	template <class T> class Buffer
+	template <class T> class [[deprecated("should use std::vector instead")]] Buffer
 	{
 		public:
 
@@ -331,23 +331,23 @@ namespace emergent
 }
 
 
-#include <iomanip>
+// #include <iomanip>
 
-/// Allows a buffer to be passed to cout. If the buffer contains byte
-/// data then it is output as hex.
-template <class T> std::ostream &operator << (std::ostream &output, const emg::Buffer<T> &b)
-{
-	if (std::is_same<T, emg::byte>::value)
-	{
-		output << std::hex << std::setfill('0');
-		for (int i=0; i<b.Size(); i++) output << std::setw(2) << (int)b[i] << " ";
-		output << std::dec;
-	}
-	else
-	{
-		for (int i=0; i<b.Size(); i++) output << b[i] << " ";
-	}
+// /// Allows a buffer to be passed to cout. If the buffer contains byte
+// /// data then it is output as hex.
+// template <class T> std::ostream &operator << (std::ostream &output, const emg::Buffer<T> &b)
+// {
+// 	if (std::is_same<T, emg::byte>::value)
+// 	{
+// 		output << std::hex << std::setfill('0');
+// 		for (int i=0; i<b.Size(); i++) output << std::setw(2) << (int)b[i] << " ";
+// 		output << std::dec;
+// 	}
+// 	else
+// 	{
+// 		for (int i=0; i<b.Size(); i++) output << b[i] << " ";
+// 	}
 
-	return output << " (" << b.Size() << " bytes)";
-}
+// 	return output << " (" << b.Size() << " bytes)";
+// }
 

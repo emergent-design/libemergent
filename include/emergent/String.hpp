@@ -106,8 +106,8 @@ namespace emergent
 					std::string result;
 					result.reserve(text.length());
 
-					int start	= text.find_first_of('{');
-					int end		= 0;
+					size_t start	= text.find_first_of('{');
+					size_t end		= 0;
 
 					while (start != std::string_view::npos)
 					{
@@ -148,7 +148,7 @@ namespace emergent
 				string result;
 				result.reserve(text.length());
 
-				for (int i=0; i<text.size(); i++)
+				for (size_t i=0; i<text.size(); i++)
 				{
 					if (isupper(text[i]))
 					{

@@ -9,7 +9,7 @@ namespace emergent
 	///
 	/// Only numeric types of image are permitted, a compiler error
 	/// will occur otherwise.
-	template <class T = byte, byte D = 1> class Image : public ImageBase<T>
+	template <typename T = byte, byte D = 1> class Image : public ImageBase<T>
 	{
 		public:
 			/// Default constructor
@@ -17,22 +17,22 @@ namespace emergent
 
 
 			/// Constructor that allocates an image buffer of the required size
-			Image(int width, int height) : ImageBase<T>(D, width, height) {}
+			Image(const int width, const int height) : ImageBase<T>(D, width, height) {}
 
 
 			/// Constructor that loads an image from file
-			Image(std::string path) : ImageBase<T>(path, D) {}
+			Image(const std::string &path) : ImageBase<T>(path, D) {}
 
 
 			/// Copy constructor with automatic type conversion
-			template <class U> Image(const ImageBase<U> &image) : ImageBase<T>(D)
+			template <typename U> Image(const ImageBase<U> &image) : ImageBase<T>(D)
 			{
 				this->Copy(image);
 			}
 
 
 			/// Assignment override with type and depth conversion
-			template <class U> Image<T, D> &operator=(const ImageBase<U> &image)
+			template <typename U> Image<T, D> &operator=(const ImageBase<U> &image)
 			{
 				this->Copy(image);
 				return *this;
@@ -43,13 +43,14 @@ namespace emergent
 			/// Can be used to clear all the pixels of an RGB image to 0,0,0 for example.
 			Image<T, D> &operator=(const T value)
 			{
-				this->buffer = value;
+				// this->buffer = value;
+				std::fill(this->buffer.begin(), this->buffer.end(), value);
 				return *this;
 			}
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			void Resize(int width, int height, byte depth = 0) override
+			void Resize(const int width, const int height, const byte depth = 0) override
 			{
 				if (depth && depth != D)
 				{
@@ -64,7 +65,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			bool Load(std::string path, byte depth = 0) override
+			bool Load(const std::string &path, const byte depth = 0) override
 			{
 				if (depth && depth != D)
 				{
@@ -79,7 +80,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			bool Load(Buffer<byte> &buffer, byte depth = 0) override
+			bool Load(std::vector<byte> &buffer, const byte depth = 0) override
 			{
 				if (depth && depth != D)
 				{
@@ -94,7 +95,7 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			bool LoadRaw(std::string path) override
+			bool LoadRaw(const std::string &path) override
 			{
 				return ImageBase<T>::LoadRaw(path, true);
 			}

@@ -90,17 +90,18 @@ namespace emergent
 
 
 		// Console colours
-		static constexpr const char *Reset		= "\e[0m";
-		static constexpr const char *Black		= "\e[30m";
-		static constexpr const char *Red		= "\e[31m";
-		static constexpr const char *Green		= "\e[32m";
-		static constexpr const char *Yellow		= "\e[33m";
-		static constexpr const char *Blue		= "\e[34m";
-		static constexpr const char *Magenta	= "\e[35m";
-		static constexpr const char *Cyan		= "\e[36m";
-		static constexpr const char *White		= "\e[37m";
+		static constexpr const char *Reset		= "\x1B[0m";
+		static constexpr const char *Black		= "\x1B[30m";
+		static constexpr const char *Red		= "\x1B[31m";
+		static constexpr const char *Green		= "\x1B[32m";
+		static constexpr const char *Yellow		= "\x1B[33m";
+		static constexpr const char *Blue		= "\x1B[34m";
+		static constexpr const char *Magenta	= "\x1B[35m";
+		static constexpr const char *Cyan		= "\x1B[36m";
+		static constexpr const char *White		= "\x1B[37m";
+		static constexpr const char *Default	= "\x1B[39m";
 
 		// Console commands
-		static constexpr const char *Erase		= "\33[2K\r";
+		static constexpr const char *Erase		= "\x1B[2K\r";
 	};
 }

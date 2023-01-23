@@ -38,7 +38,7 @@ namespace emergent
 
 		static DateTime FromISO(std::string &time)
 		{
-			tm t 			= { 0 };
+			tm t 			= {};
 			auto *remaining = strptime(time.c_str(), "%Y-%m-%dT%H:%M:%SZ", &t);
 
 			return remaining && !*remaining ? mktime(&t) : -1;

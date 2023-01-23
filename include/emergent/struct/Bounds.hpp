@@ -42,3 +42,4 @@ template <class T> std::ostream &operator << (std::ostream &output, const emerge
 {
 	return output << "min=" << b.min << ", max=" << b.max;
 }
+

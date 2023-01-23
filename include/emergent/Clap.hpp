@@ -253,7 +253,7 @@ namespace emergent
 						}
 						else
 						{
-							for (int j=1; j<item.size(); j++)
+							for (int j=1; j<(int)item.size(); j++)
 							{
 								if (std::isalpha(item[j]))
 								{

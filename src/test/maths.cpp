@@ -1,59 +1,61 @@
-#include <catch.hpp>
+#include "doctest.h"
 #include <emergent/Maths.hpp>
 
-
-TEST_CASE("finding the means of values", "[maths]")
+TEST_SUITE("maths")
 {
-	SECTION("an empty vector returns zero")
+	TEST_CASE("finding the means of values")
 	{
-		REQUIRE(emg::Maths::mean<int>({}) == 0);
+		SUBCASE("an empty vector returns zero")
+		{
+			CHECK(emg::Maths::mean<int>({}) == 0);
+		}
+
+		SUBCASE("a single value returns that value")
+		{
+			CHECK(emg::Maths::mean<int>({ 42 }) == 42);
+		}
+
+		SUBCASE("mean is calculated for multiple values")
+		{
+			CHECK(emg::Maths::mean<int>({ 42, 13 }) == 27.5);
+		}
 	}
 
-	SECTION("a single value returns that value")
+
+	TEST_CASE("finding the median of values")
 	{
-		REQUIRE(emg::Maths::mean<int>({ 42 }) == 42);
-	}
+		SUBCASE("an empty vector returns zero")
+		{
+			std::vector<int> empty;
 
-	SECTION("mean is calculated for multiple values")
-	{
-		REQUIRE(emg::Maths::mean<int>({ 42, 13 }) == 27.5);
-	}
-}
+			CHECK(emg::Maths::median(empty) == 0);
+		}
 
+		SUBCASE("a single value returns that value")
+		{
+			std::vector<int> single	= { 42 };
+			CHECK(emg::Maths::median(single) == 42);
+		}
 
-TEST_CASE("finding the median of values", "[maths]")
-{
-	SECTION("an empty vector returns zero")
-	{
-		std::vector<int> empty;
+		SUBCASE("two values return the mean")
+		{
+			std::vector<int> pair			= { 42, 13 };
+			std::vector<double> floating	= { 42.0, 13.0 };
 
-		REQUIRE(emg::Maths::median(empty) == 0);
-	}
+			CHECK(emg::Maths::median(pair) == 27);
+			CHECK(emg::Maths::median(floating) == 27.5);
+		}
 
-	SECTION("a single value returns that value")
-	{
-		std::vector<int> single	= { 42 };
-		REQUIRE(emg::Maths::median(single) == 42);
-	}
+		SUBCASE("odd number of values return the median")
+		{
+			std::vector<int> odd = { 42, 5, 12, 93, -1 };
+			CHECK(emg::Maths::median(odd) == 12);
+		}
 
-	SECTION("two values return the mean")
-	{
-		std::vector<int> pair			= { 42, 13 };
-		std::vector<double> floating	= { 42.0, 13.0 };
-
-		REQUIRE(emg::Maths::median(pair) == 27);
-		REQUIRE(emg::Maths::median(floating) == 27.5);
-	}
-
-	SECTION("odd number of values return the median")
-	{
-		std::vector<int> odd = { 42, 5, 12, 93, -1 };
-		REQUIRE(emg::Maths::median(odd) == 12);
-	}
-
-	SECTION("even number of values return the larger of the two median values")
-	{
-		std::vector<int> even = { 42, 5, 12, 93 };
-		REQUIRE(emg::Maths::median(even) == 42);
+		SUBCASE("even number of values return the larger of the two median values")
+		{
+			std::vector<int> even = { 42, 5, 12, 93 };
+			CHECK(emg::Maths::median(even) == 42);
+		}
 	}
 }
