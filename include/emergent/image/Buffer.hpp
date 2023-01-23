@@ -4,7 +4,8 @@
 #include <cstring>
 
 
-namespace emergent::image
+// namespace emergent::image  // >= c++17 only :(
+namespace emergent { namespace image
 {
 	// A simple buffer for ImageBase<> to use instead of std::vector<>, but since images are
 	// only ever dealing with fundamental types then there is no need to invoke destructors
@@ -101,4 +102,4 @@ namespace emergent::image
 		[[nodiscard]] const_iterator cbegin() const	{ return const_iterator(this->storage); }
 		[[nodiscard]] const_iterator cend() const	{ return const_iterator(this->storage + this->used); }
 	};
-}
+}}

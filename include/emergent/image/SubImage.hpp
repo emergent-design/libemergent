@@ -4,7 +4,8 @@
 #include <emergent/image/Iterator.hpp>
 
 
-namespace emergent::image
+// namespace emergent::image  // >= c++17 only :(
+namespace emergent { namespace image
 {
 	template <class T> struct SubImage
 	{
@@ -54,5 +55,4 @@ namespace emergent::image
 				: image::Iterator<const T>();
 		}
 	};
-}
-
+}}
