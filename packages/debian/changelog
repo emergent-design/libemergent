@@ -1,3 +1,9 @@
+libemergent0 (0.1.3) unstable; urgency=medium
+
+  * Added a Generator to assist with parallelisation using std::par
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 15 Feb 2023 17:46:26 +0000
+
 libemergent0 (0.1.2) unstable; urgency=medium
 
   * Missed a namespace modification for Iterator.hpp

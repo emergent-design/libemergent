@@ -31,7 +31,7 @@ namespace emergent
 	template <typename T = byte> class ImageBase
 	{
 		static_assert(std::is_arithmetic<T>::value, "Image type must be numeric");
-		static_assert(!std::is_same<T, bool>::value, "Image type cannot be bool due to std::vector specialisation");
+		static_assert(!std::is_same<T, bool>::value, "Image type cannot be bool due to std::vector iterator specialisation");
 
 		public:
 
@@ -507,7 +507,7 @@ namespace emergent
 					const double d	= sx * sy;
 					auto *pb		= this->buffer.data() + (int)y * line + (int)x * N;
 
-					if (std::is_integral<T>::value)
+					if (std::is_integral<T>::value)	// can be constexpr when c++14 support is deprecated
 					{
 						for (int i=0; i<N; i++, pb++)
 						{
