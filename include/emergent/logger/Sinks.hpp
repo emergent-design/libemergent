@@ -31,6 +31,7 @@ namespace emergent
 			public:
 
 				virtual void Write(Severity severity, const std::string &message) = 0;
+				virtual ~Sink() {}
 
 			protected:
 
