@@ -26,7 +26,7 @@ namespace emergent
 	// A subject base class is expected to implement the following interface
 	// {
 	// 		public:
-	//			void Initialise(...)
+	//			bool Initialise(...)
 	// 			void OnEntry();
 	// 			void OnExit();
 	// 			void Poll();
