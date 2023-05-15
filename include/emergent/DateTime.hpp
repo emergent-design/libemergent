@@ -26,11 +26,8 @@ namespace emergent
 
 		static DateTime Today()
 		{
-			tm t;
-			time_t reference = time(0);
-			gmtime_r(&reference, &t);
-
-			t.tm_hour = t.tm_min = t.tm_sec = 0;
+			auto t		= Convert(time(0));
+			t.tm_hour	= t.tm_min = t.tm_sec = 0;
 
 			return mktime(&t);
 		}
@@ -45,10 +42,18 @@ namespace emergent
 		}
 
 
-		std::string FormatISO() const
+		// Convert a timestamp to calendar time. Useful for formatting a string
+		static tm Convert(const time_t timestamp)
 		{
 			tm t;
-			gmtime_r(&this->timestamp, &t);
+			gmtime_r(&timestamp, &t);
+			return t;
+		}
+
+
+		std::string FormatISO() const
+		{
+			const auto t = Convert(this->timestamp);
 
 			return String::format(
 				"%04d-%02d-%02dT%02d:%02d:%02dZ",
@@ -57,15 +62,24 @@ namespace emergent
 			);
 		}
 
+
 		std::string FormatDateISO() const
 		{
-			tm t;
-			gmtime_r(&this->timestamp, &t);
+			const auto t = Convert(this->timestamp);
 
 			return String::format(
 				"%04d-%02d-%02d",
-				1900+t.tm_year, 1+t.tm_mon, t.tm_mday
+				1900 + t.tm_year, 1 + t.tm_mon, t.tm_mday
 			);
+		}
+
+
+		// Provides the year and month in ISO format: YYYY-MM
+		std::string FormatMonthISO() const
+		{
+			const auto t = Convert(this->timestamp);
+
+			return String::format("%04d-%02d", 1900 + t.tm_year, 1 + t.tm_mon);
 		}
 
 
@@ -84,9 +98,7 @@ namespace emergent
 
 		DateTime &AddMonths(int months)
 		{
-			tm t;
-			gmtime_r(&this->timestamp, &t);
-
+			auto t			 = Convert(this->timestamp);
 			t.tm_mon		+= months;
 			this->timestamp  = mktime(&t);
 			return *this;
@@ -94,9 +106,7 @@ namespace emergent
 
 		DateTime &AddYears(int years)
 		{
-			tm t;
-			gmtime_r(&this->timestamp, &t);
-
+			auto t			 = Convert(this->timestamp);
 			t.tm_year		+= years;
 			this->timestamp  = mktime(&t);
 			return *this;
