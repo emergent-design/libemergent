@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN true
 WORKDIR /code
 
+COPY --if-exists proxy.conf /etc/apt/apt.conf.d/30-proxy
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl build-essential clang fakeroot chrpath dh-exec
 
 code:
