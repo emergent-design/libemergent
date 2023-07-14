@@ -20,13 +20,13 @@ namespace emergent
 
 		static DateTime Now()
 		{
-			return time(0);
+			return std::time(0);
 		}
 
 
 		static DateTime Today()
 		{
-			auto t		= Convert(time(0));
+			auto t		= Convert(std::time(0));
 			t.tm_hour	= t.tm_min = t.tm_sec = 0;
 
 			return mktime(&t);

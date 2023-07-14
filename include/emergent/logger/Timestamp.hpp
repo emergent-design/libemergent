@@ -1,6 +1,7 @@
 #pragma once
 
-#include <time.h>
+// #include <time.h>
+#include <ctime>
 #include <chrono>
 #include <emergent/String.hpp>
 
@@ -13,7 +14,7 @@ namespace emergent
 
 			static inline tm Time()
 			{
-				return From(time(0));
+				return From(std::time(0));
 			}
 
 
