@@ -728,14 +728,14 @@ namespace emergent
 
 
 			// Return an iterator to all of the pixels in the image. It will automatically step between
-			// pixels and provide a poitner to the current position which gives access to all channels.
+			// pixels and provide a pointer to the current position which gives access to all channels.
 			image::Iterator<T> Pixels()
 			{
 				return image::Iterator<T>(this->buffer.data(), this->width * this->height, this->depth);
 			}
 
 			// Return a const iterator to all of the pixels in the image. It will automatically step between
-			// pixels and provide a poitner to the current position which gives access to all channels.
+			// pixels and provide a pointer to the current position which gives access to all channels.
 			image::Iterator<const T> Pixels() const
 			{
 				return image::Iterator<const T>(this->buffer.data(), this->width * this->height, this->depth);
