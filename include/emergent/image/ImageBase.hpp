@@ -611,6 +611,7 @@ namespace emergent
 							{
 								case 0:		result = FreeImage_Save(fif, image, path.c_str(), PNG_DEFAULT);			break;
 								case 1:		result = FreeImage_Save(fif, image, path.c_str(), JPEG_QUALITYGOOD);	break;
+								case 16:	result = FreeImage_Save(fif, image, path.c_str(), WEBP_LOSSLESS);		break;
 								default:	result = FreeImage_Save(fif, image, path.c_str(), JPEG_QUALITYNORMAL);	break;
 							}
 						}
@@ -642,6 +643,7 @@ namespace emergent
 						{
 							case 0:		result = FreeImage_SaveToMemory(FIF_PNG, image, mem, PNG_DEFAULT);			break;
 							case 1:		result = FreeImage_SaveToMemory(FIF_JPEG, image, mem, JPEG_QUALITYGOOD);	break;
+							case 16:	result = FreeImage_SaveToMemory(FIF_WEBP, image, mem, WEBP_LOSSLESS);		break;
 							default:	result = FreeImage_SaveToMemory(FIF_JPEG, image, mem, JPEG_QUALITYNORMAL);	break;
 						}
 
