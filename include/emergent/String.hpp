@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <vector>
 
 #ifdef __GNUC__
@@ -55,6 +56,17 @@ namespace emergent
 			static void save(const string path, const string &data)
 			{
 				std::ofstream(path).write(data.data(), data.size());
+			}
+
+
+			static std::string implode(const std::vector<std::string> &items, const std::string &delimiter)
+			{
+				return items.empty() ? "" : std::accumulate(
+					std::next(items.begin()),
+					items.end(),
+					items.front(),
+				[&](const auto &a, const auto &b) { return a + delimiter + b; }
+				);
 			}
 
 
