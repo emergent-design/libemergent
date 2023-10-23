@@ -343,6 +343,9 @@ namespace emergent::image
 
 			template <typename T, typename C> static bool Encode(const ImageBase<T> &src, C &dst, C &scratch, const int compression = 1)
 			{
+				static_assert(is_contiguous<C>, "source must be a contiguous container type");
+				static_assert(sizeof(typename C::value_type) == 1, "source must be a byte buffer");
+
 				thread_local auto context = std::unique_ptr<ZSTD_CCtx, void(*)(ZSTD_CCtx*)>(
 					ZSTD_createCCtx(),
 					[](auto *c) { ZSTD_freeCCtx(c); }
