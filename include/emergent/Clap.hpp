@@ -11,6 +11,37 @@
 
 namespace emergent
 {
+	// Tools to convert string parameters to other values.
+	// It can also map a vector of strings to a tuple of required types which permits the following:
+	//   const auto [dst, count] = parameters::get<fs::path, int>(parameters);
+	namespace parameters
+	{
+		template <typename T> inline T transform(const std::string &s)
+		{
+			if (std::is_floating_point<T>::value)	return std::stod(s);
+			if (std::is_integral<T>::value)			return std::stol(s, nullptr, 0);	// Allow for conversion of hex values
+		}
+		template <> inline bool transform(const std::string &s)		{ return s == "1" || s == "high" || s == "true"; }
+		template <> inline fs::path transform(const std::string &s)	{ return s; }
+		template <> inline string transform(const std::string &s)	{ return s; }
+
+
+		template <typename... Types, std::size_t... Is> auto create_tuple(std::index_sequence<Is...>, const std::vector<std::string> &values)
+		{
+			return std::make_tuple(transform<Types>(values[Is])...);
+		}
+
+		template <typename... Types> std::tuple<Types...> get(const std::vector<string> &values)
+		{
+			if (values.size() != sizeof...(Types))
+			{
+				throw std::runtime_error("unexpected number of values");
+			}
+
+			return create_tuple<Types...>(std::index_sequence_for<Types...> {}, values);
+		}
+	}
+
 	// A command-line argument parser.
 	class Clap
 	{
@@ -50,9 +81,20 @@ namespace emergent
 				// numeric or string.
 				template<typename T> auto &Bind(T &item)
 				{
-					this->set = [&](auto v) { Convert(v, item); };
+					this->set = [&](auto v) { item = parameters::transform<T>(v); }; //Convert(v, item); };
 					return *this;
 				}
+
+
+				// Bind this option to a vector - the set function can be
+				// called multiple times and it will add each converted item
+				// to the vector.
+				template<typename T> auto &Bind(std::vector<T> &item)
+				{
+					this->set = [&](auto v) { item.push_back(parameters::transform<T>(v)); };
+					return *this;
+				}
+
 
 				// Bind this option to a function that will be invoked
 				// with the corresponding value if the option is supplied.
@@ -76,7 +118,7 @@ namespace emergent
 				bool flag = false;
 				std::string name;
 				std::string description;
-				std::function<void(std::string)> set = nullptr;
+				std::function<void(const std::string &)> set = nullptr;
 			};
 
 
@@ -384,36 +426,6 @@ namespace emergent
 				}
 			}
 
-
-			// If the bound variable is a vector<> then attempt to convert the value
-			// to the element type of the container and then add it.
-			template <typename T> static void Convert(std::string value, std::vector<T> &target)
-			{
-				T converted;
-				Convert(value, converted);
-				target.push_back(converted);
-			}
-
-
-			// A string does not require conversion.
-			static void Convert(std::string value, std::string &target)
-			{
-				target = value;
-			}
-
-
-			static void Convert(std::string value, fs::path &target)
-			{
-				target = value;
-			}
-
-
-			// Convert value to the appropriate numeric type.
-			template <typename T> static void Convert(std::string value, T &target)
-			{
-				if (std::is_floating_point<T>::value)		target = std::stod(value);
-				if (std::is_integral<T>::value)				target = std::stol(value);
-			}
 
 			std::vector<Option> longOptions;
 			std::map<char, Option> options;

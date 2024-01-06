@@ -142,7 +142,18 @@ namespace emergent
 						? result.append(text.substr(end))
 						: result;
 				}
+
+
+
 			#endif
+
+
+			/// Trim a string (both ends) of the given character
+			static const string trim(const string &text, const char c)
+			{
+				auto start = text.find_first_not_of(c);
+				return start == string::npos ? "" : text.substr(start, text.find_last_not_of(c) - start + 1);
+			}
 
 
 			/// Change a string to lowercase (transforms the string that is passed in).
@@ -174,14 +185,6 @@ namespace emergent
 			}
 
 
-			/// Trim a string (both ends) of the given character
-			static const string trim(const string &text, const char c)
-			{
-				auto start = text.find_first_not_of(c);
-				return start == string::npos ? "" : text.substr(start, text.find_last_not_of(c) - start + 1);
-			}
-
-
 			template <typename ...Args> static const string format(const char *format, Args ...args)
 			{
 				// Assume an initial buffer size of 1K
@@ -200,6 +203,7 @@ namespace emergent
 				result.resize(size);
 				return result;
 			}
+
 
 		private:
 
