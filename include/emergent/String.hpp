@@ -69,17 +69,6 @@ namespace emergent
 			}
 
 
-			/// Implode any iterable container using a transform function to convert each item in the container to a string
-			template <typename T> static std::string implode(const T &items, const char delimiter, std::function<std::string(const typename T::value_type&)> transform)
-			{
-				return items.empty() ? "" : std::accumulate(
-					std::next(items.begin()), items.end(),
-					transform(*items.begin()),
-					[&](const auto &a, const auto &b) { return a + delimiter + transform(b); }
-				);
-			}
-
-
 			/// Split a string into a list of strings wherever the specified delimiters are found
 			static std::vector<string> explode(const string &text, const string &delimiters)
 			{
@@ -98,8 +87,20 @@ namespace emergent
 				return result;
 			}
 
+
 			#ifdef __cpp_lib_string_view
 				#include <string_view>
+
+				/// Implode any iterable container using a transform function to convert each item in the container to a string
+				template <typename T> static std::string implode(const T &items, std::string_view delimiter, std::function<std::string(const typename T::value_type&)> transform)
+				{
+					return items.empty() ? "" : std::accumulate(
+						std::next(items.begin()), items.end(),
+						transform(*items.begin()),
+						[&](const auto &a, const auto &b) { return a + std::string(delimiter) + transform(b); }
+					);
+				}
+
 
 				/// Split a string into a list of strings wherever the specified delimiters are found
 				static std::vector<std::string_view> explode(std::string_view text, std::string_view delimiters)
