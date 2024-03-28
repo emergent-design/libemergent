@@ -62,10 +62,20 @@ namespace emergent
 			static std::string implode(const std::vector<std::string> &items, const std::string &delimiter)
 			{
 				return items.empty() ? "" : std::accumulate(
-					std::next(items.begin()),
-					items.end(),
+					std::next(items.begin()), items.end(),
 					items.front(),
-				[&](const auto &a, const auto &b) { return a + delimiter + b; }
+					[&](const auto &a, const auto &b) { return a + delimiter + b; }
+				);
+			}
+
+
+			/// Implode any iterable container using a transform function to convert each item in the container to a string
+			template <typename T> static std::string implode(const T &items, const char delimiter, std::function<std::string(const typename T::value_type&)> transform)
+			{
+				return items.empty() ? "" : std::accumulate(
+					std::next(items.begin()), items.end(),
+					transform(*items.begin()),
+					[&](const auto &a, const auto &b) { return a + delimiter + transform(b); }
 				);
 			}
 
@@ -108,6 +118,40 @@ namespace emergent
 
 					return result;
 				}
+
+
+				/// Explode to any container type using a transform function to convert the string segments
+				/// to the value type of the container
+				template <typename T> static T explode(std::string_view text, const char delimiter, std::function<typename T::value_type(std::string_view)> transform)
+				{
+					T result;
+					const int size = text.length();
+
+					for (int i=0, last=0; i>=0; last = i + 1)
+					{
+						i = text.find_first_of(delimiter, last);
+
+						// If the transform functions throws an exception simply catch it. This particular
+						// segment will not be added to the result.
+						try
+						{
+							if (i > last)
+							{
+								result.insert(result.end(), transform({ text.data() + last, static_cast<size_t>(i - last) }));
+							}
+							else if (i < 0 && last < size)
+							{
+								result.insert(result.end(), transform({ text.data() + last, static_cast<size_t>(size - last) }));
+							}
+						}
+						catch (...)
+						{
+						}
+					}
+
+					return result;
+				}
+
 
 				/// Interpolate tokens delimited by {} within the string text and replace using the substitution function - this
 				/// allows lookups or modifications to be performed. For example:
