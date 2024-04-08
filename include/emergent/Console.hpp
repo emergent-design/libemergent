@@ -101,6 +101,8 @@ namespace emergent
 		static constexpr const char *White		= "\x1B[37m";
 		static constexpr const char *Default	= "\x1B[39m";
 
+		static constexpr const char *BrightYellow = "\x1B[93m";
+
 		// Console commands
 		static constexpr const char *Erase		= "\x1B[2K\r";
 	};

@@ -29,6 +29,13 @@ namespace emergent
 		}
 
 
+		template <typename T> static T Load(const fs::path &path)
+		{
+			T dst;
+			return Load(dst, path) ? dst : T();
+		}
+
+
 		// Save a contiguous buffer to file
 		template <typename T> static bool Save(const T &src, const fs::path &path)
 		{

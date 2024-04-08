@@ -6,6 +6,7 @@
 #include <iostream>
 //#include <hiredis/hiredis.h>
 #include <emergent/logger/Timestamp.hpp>
+#include <emergent/Console.hpp>
 
 #ifdef __linux
 	#include <syslog.h>
@@ -37,7 +38,14 @@ namespace emergent
 
 				static const char *ToString(Severity severity)
 				{
-					static const char *severities[] = { "<fatal>", "<error>", "<warning>", "<notice>", "<info>", "<debug>" };
+					static const char *severities[] = {
+						"<fatal>",
+						"<error>",
+						" <warn>",
+						" <note>",
+						" <info>",
+						"<debug>"
+					};
 					return severities[(int)severity];
 				}
 		};
@@ -50,7 +58,18 @@ namespace emergent
 
 				virtual void Write(Severity severity, const std::string &message)
 				{
-					std::cout << ToString(severity) << " " << message << std::endl;
+					if (severity < Severity::Warning)
+					{
+						std::cout << emergent::Console::Red << ToString(severity) << emergent::Console::Reset << " " << message << '\n';
+					}
+					else if (severity == Severity:: Warning)
+					{
+						std::cout << emergent::Console::BrightYellow << ToString(severity) << emergent::Console::Reset << " " << message << '\n';
+					}
+					else
+					{
+						std::cout << ToString(severity) << " " << message << '\n';
+					}
 					std::flush(std::cout);
 				}
 		};
