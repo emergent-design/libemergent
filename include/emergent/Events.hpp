@@ -155,7 +155,7 @@ namespace emergent::events
 			// Subscribe to a specific key - the subscription is bound to the lifetime of the return value so it will automatically
 			// detach itself from the publisher when destroyed. Subscriptions should therefore not be permitted to live beyond the
 			// scope of the publisher.
-			std::unique_ptr<Subscription> Subscribe(const Key &key, Callback callback)
+			[[nodiscard]] std::unique_ptr<Subscription> Subscribe(const Key &key, Callback callback)
 			{
 				// return Subscription { key, *this, callback };
 				return std::make_unique<Subscription>(key, *this, callback);
@@ -270,7 +270,7 @@ namespace emergent::events
 			// detach itself from the publisher when destroyed. Subscriptions should therefore not be permitted to live beyond the
 			// scope of the publisher.
 			// Subscribing to the Base event class will allow a listener to receive all events.
-			template <typename Event> requires(std::derived_from<Event, Base>) std::unique_ptr<Subscription<Event>> Subscribe(typename Subscription<Event>::Callback callback)
+			template <typename Event> requires(std::derived_from<Event, Base>) [[nodiscard]] std::unique_ptr<Subscription<Event>> Subscribe(typename Subscription<Event>::Callback callback)
 			{
 				// return Subscription<Event> { *this, callback };
 				return std::make_unique<Subscription<Event>>(*this, callback);
