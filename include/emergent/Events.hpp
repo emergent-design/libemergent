@@ -152,6 +152,9 @@ namespace emergent::events
 			};
 
 
+			virtual ~KeyPublisher() {}
+
+
 			// Subscribe to a specific key - the subscription is bound to the lifetime of the return value so it will automatically
 			// detach itself from the publisher when destroyed. Subscriptions should therefore not be permitted to live beyond the
 			// scope of the publisher.
@@ -264,6 +267,9 @@ namespace emergent::events
 
 					Callback callback;
 			};
+
+
+			virtual ~PolymorphicPublisher() {}
 
 
 			// Subscribe to a specific event type - the subscription is bound to the lifetime of the return value so it will automatically
