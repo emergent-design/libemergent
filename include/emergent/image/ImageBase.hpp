@@ -110,6 +110,16 @@ namespace emergent
 			}
 
 
+			// Copy from an existing image but ensure the required depth is established.
+			// Converts type and depth where necessary and returns itself
+			template <typename U> ImageBase<T> &From(const ImageBase<U> &image, const byte depth)
+			{
+				this->depth = depth;
+				this->Copy(image);
+				return *this;
+			}
+
+
 			/// Operator override to support implicit and explicit typecasting
 			operator T*()				{ return this->buffer.data(); }
 			operator const T*() const	{ return this->buffer.data(); }
