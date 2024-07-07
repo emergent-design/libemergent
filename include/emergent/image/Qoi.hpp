@@ -36,7 +36,25 @@ namespace emergent::image
 				const size_t height	= src.Height();
 				const byte depth	= src.Depth();
 
-				if (width == 0 || height == 0 || depth != 3 || width * height > MAX_PIXELS)
+				if (width == 0 || height == 0 || width * height > MAX_PIXELS)
+				{
+					return false;
+				}
+
+				if (depth == 1)
+				{
+					// If encoding a greyscale image simply write the raw bytes
+					Header header(width, height, 1, sizeof(T));
+
+					const size_t size = width * height * sizeof(T);
+
+					dst.resize(sizeof(Header) + size);
+					std::memcpy(dst.data(), &header, sizeof(Header));
+					std::memcpy(dst.data() + sizeof(Header), src.Data(), size);
+
+					return true;
+				}
+				else if (depth != 3)
 				{
 					return false;
 				}
@@ -187,12 +205,27 @@ namespace emergent::image
 				const size_t height	= be32toh(header.height);
 				const byte depth	= header.depth;
 
-				if (width == 0 || height == 0 || depth != 3 || header.typesize != sizeof(T) || header.magic != htobe32(MAGIC))
+				if (width == 0 || height == 0 || header.typesize != sizeof(T) || header.magic != htobe32(MAGIC))
 				{
 					return false;
 				}
 
-				if (width * height >= MAX_PIXELS)
+				if (depth == 1)
+				{
+					// If decoding a greyscale image simply copy the raw bytes
+					const size_t size = width * height * sizeof(T);
+
+					if (src.size() == sizeof(Header) + size)
+					{
+						dst.Resize(width, height, 1);
+						std::memcpy(dst.Data(), src.data() + sizeof(Header), size);
+
+						return true;
+					}
+
+					return false;
+				}
+				else if (depth != 3 || width * height >= MAX_PIXELS)
 				{
 					return false;
 				}
