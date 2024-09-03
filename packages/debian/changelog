@@ -1,3 +1,14 @@
+libemergent0 (0.1.7) unstable; urgency=medium
+
+  * Improved parameter handling and helpers in Clap
+  * Added new implode/explode string functions
+  * Logging format improvements
+  * Added basic event pub/sub helpers (both key-based and polymorphic)
+  * Added a copying "From" function to ImageBase that forces a depth
+  * Qoi can now implicitly handle greyscale images (no compression) 
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Tue, 03 Sep 2024 10:49:09 +0100
+
 libemergent0 (0.1.6) unstable; urgency=medium
 
   * Merged implode utility function from @BlauPuppiez
