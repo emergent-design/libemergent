@@ -40,7 +40,24 @@ namespace emergent
 
 			return create_tuple<Types...>(std::index_sequence_for<Types...> {}, values);
 		}
+
+
+		template <typename T> T retrieve(const std::vector<std::string> &values, const size_t index, const T &def)
+		{
+			return index < values.size() ? transform<T>(values[index]) : def;
+		}
+
+		template <typename... Types, std::size_t... Is> auto create_tuple(std::index_sequence<Is...>, const std::vector<std::string> &values, Types... defaults)
+		{
+			return std::make_tuple(retrieve<Types>(values, Is, defaults)...);
+		}
+
+		template <typename... Types> std::tuple<Types...> get(const std::vector<string> &values, Types... defaults)
+		{
+			return create_tuple<Types...>(std::index_sequence_for<Types...> {}, values, defaults...);
+		}
 	}
+
 
 	// A command-line argument parser.
 	class Clap
