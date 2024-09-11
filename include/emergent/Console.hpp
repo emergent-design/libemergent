@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <iomanip>
+// #include <cstring>
 
 #ifdef __linux
 	#include <unistd.h>
@@ -102,6 +103,8 @@ namespace emergent
 		static constexpr const char *Default	= "\x1B[39m";
 
 		static constexpr const char *BrightYellow = "\x1B[93m";
+
+		// static constexpr const size_t ColourSize = std::char_traits<char>::length(Red);
 
 		// Console commands
 		static constexpr const char *Erase		= "\x1B[2K\r";

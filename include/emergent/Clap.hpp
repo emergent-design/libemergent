@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <map>
 #include <set>
 #include <sstream>
@@ -131,7 +132,7 @@ namespace emergent
 					<< Console::Green << k << ' '
 					<< Console::Yellow << o->parameters() << '\n'
 					<< Console::Reset << std::string(widest + 1, ' ')
-					<< Console::Format(o->description(), widest + 1, width - widest)
+					<< Console::Format(o->description(), widest + 1, width)
 					<< '\n';
 			}
 
@@ -303,25 +304,26 @@ namespace emergent
 			void Usage(std::ostream &dst, std::string processName, int consoleWidth = 0)
 			{
 				int widest	= 0;
-				int width	= consoleWidth ? consoleWidth : Console::Width(); //this->ConsoleWidth();
-				std::vector<std::pair<std::string, std::string>> entries;
+				int width	= consoleWidth ? consoleWidth : Console::Width();
+
+				std::vector<std::tuple<std::string_view, std::string, std::string_view>> entries;
 				std::string extra;
 
-				dst << "usage: " << fs::path(processName).filename().string() << Console::Cyan << " [options]";
+				dst << "usage: " << fs::path(processName).filename().string() << Console::Cyan << " [options]" << Console::Yellow;
 
 				// List and describe the positional arguments
 				for (auto &[pos, opt] : positions)
 				{
 					auto name = opt.name.empty()
-						? String::format("  %s<arg%d>", Console::Yellow, pos)
-						: String::format("  %s<%s>", Console::Yellow, opt.name);
+						? String::format("  <arg%d>", pos)
+						: String::format("  <%s>", opt.name);
 
 					if (pos == 0)	extra = name.substr(1) + "...";
 					else			dst << name.substr(1);
 
 					if (!opt.description.empty())
 					{
-						entries.emplace_back(name, opt.description);
+						entries.emplace_back(Console::Yellow, name, opt.description);
 						widest = std::max(widest, (int)name.size() + 2);
 					}
 				}
@@ -330,35 +332,35 @@ namespace emergent
 
 				if (entries.size())
 				{
-					entries.emplace_back("", " ");
+					entries.emplace_back("", "", " ");
 				}
 
 				// Generate the option signatures
 				for (auto &[c, opt] : this->options)
 				{
 					auto name	= opt.name;
-					auto entry	= String::format("%s  -%c", Console::Cyan, c);
+					auto entry	= String::format("  -%c", c);
 
 					if (!name.empty())	entry += String::format(", --%s", name);
 					if (!opt.flag)		entry += name.empty() ? " <value>" : "=<value>";
 
-					entries.emplace_back(entry, opt.description);
+					entries.emplace_back(Console::Cyan, entry, opt.description);
 					widest = std::max(widest, (int)entry.size() + 2);
 				}
 
 				for (auto &opt : this->longOptions)
 				{
-					auto entry = String::format("%s      --%s%s", Console::Cyan, opt.name, opt.flag ? "" : "=<value>");
-					entries.emplace_back(entry, opt.description);
+					auto entry = String::format("      --%s%s", opt.name, opt.flag ? "" : "=<value>");
+					entries.emplace_back(Console::Cyan, entry, opt.description);
 					widest = std::max(widest, (int)entry.size() + 2);
 				}
 
 				// Describe the options
-				for (auto &[name, desc] : entries)
+				for (auto &[colour, name, desc] : entries)
 				{
-					dst << name << Console::Reset
+					dst << colour << name << Console::Reset
 						<< std::string(widest - name.size(), ' ')
-						<< Console::Format(desc, widest, width - widest)
+						<< Console::Format(desc, widest, width)
 					;
 				}
 			}
