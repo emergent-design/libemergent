@@ -59,6 +59,87 @@ namespace emergent
 	}
 
 
+	// Helpers for constructing a map of command-line operations. By deriving each of your ops from `operations::op<...Args>` they
+	// can be described and invoked. The `...Args` are the arguments that will be passed to the `run` function.
+	//
+	// Creating a map of operations is as simple as
+	//   `cosnt auto ops = operations::create<First, Second, Third>();`
+	// where each of the template arguments should be a type that derives from `operations::op<>`
+	//
+	// The operations can be described on the command-line by simply piping to cout
+	//   `std::cout << op;`
+	//
+	// An operation is then run by name
+	//   `ops.at("first")->run(arg0, arg1);`
+	namespace operations
+	{
+		template <typename... Args> struct op
+		{
+			using type = op<Args...>;
+
+			virtual ~op() {}
+			virtual std::string_view name() const = 0;
+			virtual std::string_view parameters() const = 0;
+			virtual std::string_view description() const = 0;
+			virtual void run(Args...) = 0;
+		};
+
+
+		// Returns a map where each key is the `name()` of the op and the corresponding value is a shared_ptr to
+		// the base `operations::op<>` class.
+		// To determine the base class for all of the `Types` it first maps the types to a tuple, extracts the first type, and then
+		// uses the `type` defined in the `op<>` base class.
+		template <typename... Types> std::map<std::string, std::shared_ptr<typename std::tuple_element_t<0, std::tuple<Types...>>::type>> create()
+		{
+			auto make = [](auto a) { return std::make_pair(std::string { a->name() }, a); };
+
+			return { make(std::make_shared<Types>())... };
+
+			// return { [] {
+			// 	auto instance = std::make_shared<Types>();
+			// 	return std::make_pair(std::string { instance->name }, instance);
+			// }()... };
+		}
+
+
+		// Opinionated formatting for printing out a map of operations. It will produce output that looks as follows
+		//
+		//   operations
+		//
+		//     first <parameters>
+		//           description of the "first" operation
+		//
+		//    second <parameters>
+		//           description of the "second" operation - this can
+		//           support multi-line strings.
+		//
+		template <typename... Args> inline std::ostream &operator << (std::ostream &dst, const std::map<std::string, std::shared_ptr<op<Args...>>> &ops)
+		{
+			const size_t width	= Console::Width();
+			size_t widest 		= 0;
+
+			for (auto &[k, _] : ops)
+			{
+				widest = std::max(widest, k.size() + 2);
+			}
+
+			dst << "\noperations:\n\n";
+
+			for (auto &[k, o] : ops)
+			{
+				dst	<< std::string(widest - k.size(), ' ')
+					<< Console::Green << k << ' '
+					<< Console::Yellow << o->parameters() << '\n'
+					<< Console::Reset << std::string(widest + 1, ' ')
+					<< Console::Format(o->description(), widest + 1, width - widest)
+					<< '\n';
+			}
+
+			return dst;
+		}
+	}
+
+
 	// A command-line argument parser.
 	class Clap
 	{
@@ -226,55 +307,58 @@ namespace emergent
 				std::vector<std::pair<std::string, std::string>> entries;
 				std::string extra;
 
-				dst << "usage: " << fs::path(processName).filename().string() << " [options]";
+				dst << "usage: " << fs::path(processName).filename().string() << Console::Cyan << " [options]";
 
 				// List and describe the positional arguments
-				for (auto &p : positions)
+				for (auto &[pos, opt] : positions)
 				{
-					auto name = p.second.name.empty()
-						? String::format("  <arg%d>", p.first)
-						: String::format("  <%s>", p.second.name);
+					auto name = opt.name.empty()
+						? String::format("  %s<arg%d>", Console::Yellow, pos)
+						: String::format("  %s<%s>", Console::Yellow, opt.name);
 
-					if (p.first == 0)	extra = name.substr(1) + "...";
-					else				dst << name.substr(1);
+					if (pos == 0)	extra = name.substr(1) + "...";
+					else			dst << name.substr(1);
 
-					if (!p.second.description.empty())
+					if (!opt.description.empty())
 					{
-						entries.emplace_back(name, p.second.description);
+						entries.emplace_back(name, opt.description);
 						widest = std::max(widest, (int)name.size() + 2);
 					}
 				}
 
-				dst << extra << std::endl << std::endl;
+				dst << extra << Console::Reset << std::endl << std::endl;
 
-				if (entries.size()) entries.emplace_back("", " ");
+				if (entries.size())
+				{
+					entries.emplace_back("", " ");
+				}
 
 				// Generate the option signatures
-				for (auto &o : this->options)
+				for (auto &[c, opt] : this->options)
 				{
-					auto name	= o.second.name;
-					auto entry	= String::format("  -%c", o.first);
+					auto name	= opt.name;
+					auto entry	= String::format("%s  -%c", Console::Cyan, c);
 
 					if (!name.empty())	entry += String::format(", --%s", name);
-					if (!o.second.flag)	entry += name.empty() ? " <value>" : "=<value>";
+					if (!opt.flag)		entry += name.empty() ? " <value>" : "=<value>";
 
-					entries.emplace_back(entry, o.second.description);
+					entries.emplace_back(entry, opt.description);
 					widest = std::max(widest, (int)entry.size() + 2);
 				}
 
-				for (auto &o : this->longOptions)
+				for (auto &opt : this->longOptions)
 				{
-					auto entry = String::format("      --%s%s", o.name, o.flag ? "" : "=<value>");
-					entries.emplace_back(entry, o.description);
+					auto entry = String::format("%s      --%s%s", Console::Cyan, opt.name, opt.flag ? "" : "=<value>");
+					entries.emplace_back(entry, opt.description);
 					widest = std::max(widest, (int)entry.size() + 2);
 				}
 
 				// Describe the options
-				for (auto &e : entries)
+				for (auto &[name, desc] : entries)
 				{
-					dst << e.first
-						<< std::string(widest - e.first.size(), ' ')
-						<< Console::Format(e.second, widest, width - widest)
+					dst << name << Console::Reset
+						<< std::string(widest - name.size(), ' ')
+						<< Console::Format(desc, widest, width - widest)
 					;
 				}
 			}

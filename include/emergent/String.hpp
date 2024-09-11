@@ -189,6 +189,13 @@ namespace emergent
 				}
 
 
+				/// Trim a string_view (both ends) of the given characters
+				static std::string_view trim(std::string_view &text, std::string_view chars)
+				{
+					const auto start = text.find_first_not_of(chars);
+
+					return start == string::npos ? "" : text.substr(start, text.find_last_not_of(chars) - start + 1);
+				}
 
 			#endif
 
