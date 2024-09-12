@@ -61,7 +61,8 @@ namespace emergent
 
 
 	// Helpers for constructing a map of command-line operations. By deriving each of your ops from `operations::op<...Args>` they
-	// can be described and invoked. The `...Args` are the arguments that will be passed to the `run` function.
+	// can be described and invoked. `Return` is the return type for the run function and `...Args` are the arguments that will be
+	// passed to the `run` function.
 	//
 	// Creating a map of operations is as simple as
 	//   `cosnt auto ops = operations::create<First, Second, Third>();`
@@ -74,15 +75,15 @@ namespace emergent
 	//   `ops.at("first")->run(arg0, arg1);`
 	namespace operations
 	{
-		template <typename... Args> struct op
+		template <typename Return, typename... Args> struct op
 		{
-			using type = op<Args...>;
+			using type = op<Return, Args...>;
 
 			virtual ~op() {}
 			virtual std::string_view name() const = 0;
 			virtual std::string_view parameters() const = 0;
 			virtual std::string_view description() const = 0;
-			virtual void run(Args...) = 0;
+			virtual Return run(Args...) = 0;
 		};
 
 
