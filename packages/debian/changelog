@@ -1,3 +1,11 @@
+libemergent0 (0.1.8) unstable; urgency=medium
+
+  * Default parameters and improved formatting in Clap
+  * Added string_view based trim function to String
+  * Implemented new "operation" helpers in Clap
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Thu, 12 Sep 2024 09:55:50 +0100
+
 libemergent0 (0.1.7) unstable; urgency=medium
 
   * Improved parameter handling and helpers in Clap
