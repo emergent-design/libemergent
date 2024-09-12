@@ -1,5 +1,6 @@
 #pragma once
 
+#include <emergent/String.hpp>
 #include <string>
 #include <string_view>
 #include <iomanip>
@@ -58,32 +59,29 @@ namespace emergent
 			}
 
 			const auto remaining	= f.width - f.padding;
-			const auto size			= f.text.size();
-			size_t pos				= 0;
+			auto padding			= 0;
 
 			dst << std::setfill(' ');
 
-			while (pos < size)
+			for (auto line : String::explode(f.text, "\n"))
 			{
-				const auto line = f.text.find_first_of('\n', pos) - pos;
-				const auto last = size - pos < remaining
-					? std::string::npos
-					: f.text.find_last_of(" .,(/-", pos + remaining - 1);
+				line = String::trim(line, " \t");
 
-				const auto next = line < remaining
-					? f.text.substr(pos, line)
-					: f.text.substr(pos, last == std::string::npos || last < pos
-						? remaining
-						: last + 1 - pos
-				);
-
-				if (pos > 0)
+				while (line.length() >= remaining)
 				{
-					dst << std::setw(f.padding) << ' ';
+					const auto split = std::min(
+						line.find_last_of(" .,(/-", remaining - 1),
+						remaining
+					);
+
+					dst << std::setw(padding) << "" << line.substr(0, split) << '\n';
+
+					line	= line.substr(split + 1);
+					padding = f.padding;
 				}
 
-				dst << next << '\n';
-				pos += next.size() + (line < remaining ? 1 : 0);
+				dst << std::setw(padding) << "" << line <<'\n';
+				padding = f.padding;
 			}
 
 			return dst;
