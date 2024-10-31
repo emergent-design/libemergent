@@ -2,6 +2,7 @@
 
 #include <emergent/Emergent.hpp>
 #include <random>
+#include <span>
 
 
 
@@ -39,6 +40,15 @@ namespace emergent
 			this->a	= (dist(engine) & 0xffffffffffff0fffULL) | 0x0000000000004000ULL;
 			this->b	= (dist(engine) & 0x3fffffffffffffffULL) | 0x8000000000000000ULL;
 		}
+
+
+	#ifdef __cpp_lib_span
+		uuid(std::span<const byte, 128> data)
+		{
+			this->a = *reinterpret_cast<const uint64_t *>(data.first<64>().data());
+			this->b = *reinterpret_cast<const uint64_t *>(data.last<64>().data());
+		}
+	#endif
 
 
 		std::string to_string()
