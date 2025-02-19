@@ -1,3 +1,11 @@
+libemergent0 (0.1.9) unstable; urgency=medium
+
+  * Return types for operations in Clap
+  * Improved formatting in Clap
+  * Pretty-printing helper functions added to Console
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 19 Feb 2025 17:38:55 +0000
+
 libemergent0 (0.1.8) unstable; urgency=medium
 
   * Default parameters and improved formatting in Clap
