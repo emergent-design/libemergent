@@ -2,9 +2,10 @@
 
 #include <emergent/Emergent.hpp>
 #include <random>
-#include <span>
 
-
+#if __has_include(<span>)
+	#include <span>
+#endif
 
 namespace emergent
 {
