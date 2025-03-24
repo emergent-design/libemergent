@@ -131,7 +131,7 @@ namespace emergent
 			{
 				dst	<< std::string(widest - k.size(), ' ')
 					<< Console::Green << k << ' '
-					<< Console::Yellow << o->parameters() << '\n'
+					<< Console::Yellow << Console::Format(o->parameters(), widest + 1, width) << '\n'
 					<< Console::Reset << std::string(widest + 1, ' ')
 					<< Console::Format(o->description(), widest + 1, width)
 					<< '\n';
