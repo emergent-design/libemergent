@@ -80,9 +80,10 @@ namespace redis
 			{
 				int result			= REDIS_ERR;
 				auto expectation	= std::make_shared<Expectation>();
-				std::unique_lock<std::mutex> lock(expectation->cs);
 
 				this->cs.lock();
+					std::unique_lock<std::mutex> lock(expectation->cs);
+
 					if (this->context)
 					{
 						result = redisvAppendCommand(this->context, command, arguments);
@@ -92,7 +93,6 @@ namespace redis
 							this->expectations.push(expectation);
 						}
 					}
-
 				this->cs.unlock();
 
 				// Notify the multiplexer thread that there are pipelined
@@ -143,7 +143,10 @@ namespace redis
 						}
 					}
 
-					if (!connected) connected = this->Connect();
+					if (!connected)
+					{
+						connected = this->Connect();
+					}
 				}
 
 				// Make sure we're not blocking any calling threads before exiting
@@ -161,4 +164,3 @@ namespace redis
 			std::mutex cs;
 	};
 }}
-
