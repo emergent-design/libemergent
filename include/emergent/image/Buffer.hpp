@@ -53,7 +53,10 @@ namespace emergent { namespace image
 		Buffer& operator=(const Buffer &other)
 		{
 			this->resize(other.size());
-			std::memcpy(this->storage, other.storage, other.size() * sizeof(T));
+			if (this->storage)
+			{
+				std::memcpy(this->storage, other.storage, other.size() * sizeof(T));
+			}
 			return *this;
 		}
 

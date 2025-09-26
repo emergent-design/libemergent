@@ -73,9 +73,11 @@ namespace emergent
 
 			~PersistentThread()
 			{
+				// Allow the current task to complete before stopping
 				this->cs.lock();
 					this->run = false;
 				this->cs.unlock();
+
 				this->condition.notify_one();
 				this->thread.join();
 			}
@@ -126,8 +128,7 @@ namespace emergent
 			std::thread thread;
 			std::condition_variable condition;
 			std::shared_ptr<internal::TaskBase> task;
-			bool run = false;
+			std::atomic<bool> run = false;
 
 	};
 }
-
