@@ -49,7 +49,8 @@ namespace emergent
 				this->thread = std::thread([&] {
 					std::unique_lock<std::mutex> lock(this->cs);
 
-					this->run = true;
+					this->run	= true;
+					this->ready	= true;
 
 					while (this->run)
 					{
@@ -57,6 +58,7 @@ namespace emergent
 						{
 							this->task->Run();
 							this->task = nullptr;
+							this->ready = true;
 						}
 
 						this->condition.wait(lock);
@@ -93,7 +95,8 @@ namespace emergent
 
 				if (this->Ready())
 				{
-					this->task = std::make_shared<internal::Task<decltype(job())>>(std::move(job));
+					this->task	= std::make_shared<internal::Task<decltype(job())>>(std::move(job));
+					this->ready	= false;
 					this->condition.notify_one();
 
 					return std::static_pointer_cast<internal::Task<decltype(job())>>(this->task)->promise.get_future();
@@ -105,7 +108,7 @@ namespace emergent
 
 			bool Ready()
 			{
-				return this->run && !this->task;
+				return this->run && this->ready;
 			}
 
 
@@ -116,7 +119,8 @@ namespace emergent
 			{
 				std::lock_guard<std::mutex> lock(this->cs);
 
-				this->task = task;
+				this->task	= task;
+				this->ready	= false;
 				this->condition.notify_one();
 			}
 
@@ -128,7 +132,8 @@ namespace emergent
 			std::thread thread;
 			std::condition_variable condition;
 			std::shared_ptr<internal::TaskBase> task;
-			std::atomic<bool> run = false;
+			std::atomic<bool> run	= false;
+			std::atomic<bool> ready = false;
 
 	};
 }
