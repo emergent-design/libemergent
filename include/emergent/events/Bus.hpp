@@ -1,3 +1,5 @@
+#pragma once
+
 #include <emergent/events/Subscription.hpp>
 
 

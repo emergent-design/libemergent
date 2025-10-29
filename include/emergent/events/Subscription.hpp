@@ -1,3 +1,5 @@
+#pragma once
+
 #include <emergent/logger/Logger.hpp>
 #include <deque>
 
