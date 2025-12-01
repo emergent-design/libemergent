@@ -1,3 +1,11 @@
+libemergent0 (0.1.11) unstable; urgency=medium
+
+  * Allow multiline parameters in operation help text (Clap)
+  * Fix potential undefined behaviour and threading issues
+  * Tidy up the events classes
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 01 Dec 2025 15:37:23 +0000
+
 libemergent0 (0.1.10) unstable; urgency=medium
 
   * Fix for UUID if <span> is unavailable
