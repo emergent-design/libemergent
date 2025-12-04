@@ -1,11 +1,9 @@
 #pragma once
 
-#include <emergent/Timer.hpp>
 #include <emergent/logger/Logger.hpp>
 #include <hiredis/adapters/libev.h>
 #include <hiredis/async.h>
 #include <functional>
-#include <algorithm>
 #include <string.h>
 #include <ev.h>
 #include <set>
@@ -63,6 +61,12 @@ namespace redis
 			}
 
 
+			bool Connected() const
+			{
+				return this->connected;
+			}
+
+
 			// Subscription not threaded. Drive event loop...
 			void Listen()
 			{
@@ -70,9 +74,8 @@ namespace redis
 				{
 					ev_run(this->loop, EVRUN_NOWAIT);
 				}
-				else if (this->lastConnect.Elapsed() > RECONNECT_TIMEOUT)
+				else
 				{
-					this->lastConnect.Reset();
 					this->Connect();
 				}
 			}
@@ -102,16 +105,20 @@ namespace redis
 
 			bool Connect()
 			{
-				if (this->context)
+				// Limit the time between reconnection attempts
+				if (duration_cast<milliseconds>(steady_clock::now() - this->lastAttempt).count() < CONNECT_TIMEOUT)
 				{
-					if (this->context->err)
-					{
-						Log::Error("Problem with redis async connection: %s", this->context->errstr);
-					}
-					this->context = nullptr;
+					return false;
 				}
 
-				this->context = this->socket
+				if (this->context)
+				{
+					// potentially already attempting a connection
+					return false;
+				}
+
+				this->lastAttempt	= steady_clock::now();
+				this->context		= this->socket
 					? redisAsyncConnectUnix(this->connection.c_str())
 					: redisAsyncConnect(this->connection.c_str(), this->port);
 
@@ -134,6 +141,7 @@ namespace redis
 				if (!result)
 				{
 					Log::Error("Failed to attach connection handlers to redis async: %s", this->context->errstr);
+
 					redisAsyncFree(this->context);
 					this->context = nullptr;
 
@@ -141,6 +149,22 @@ namespace redis
 				}
 
 				return true;
+			}
+
+			void Disconnect()
+			{
+				this->connected = false;
+
+				if (this->context)
+				{
+					if (this->context->err)
+					{
+						Log::Error("Problem with redis async connection: %s", this->context->errstr);
+					}
+
+					redisAsyncFree(this->context);
+					this->context = nullptr;
+				}
 			}
 
 
@@ -175,6 +199,14 @@ namespace redis
 
 			static void OnConnect(const redisAsyncContext *context, int status)
 			{
+				((Subscription *)context->data)->connected = status == REDIS_OK;
+
+				if (status != REDIS_OK)
+				{
+					((Subscription *)context->data)->Disconnect();
+					return;
+				}
+
 				for (auto &c : ((Subscription *)context->data)->channels)
 				{
 					redisAsyncCommand(
@@ -188,16 +220,13 @@ namespace redis
 			}
 
 
-			static void OnDisconnect(const redisAsyncContext *context, int status)
+			static void OnDisconnect(const redisAsyncContext *context, int)
 			{
-				if (status == REDIS_ERR)
-				{
-					((Subscription *)context->data)->Connect();
-				}
+				((Subscription *)context->data)->Disconnect();
 			}
 
 
-			static constexpr int RECONNECT_TIMEOUT = 1000;	// Time (ms) between connection attempts
+			static constexpr int CONNECT_TIMEOUT = 1000;	// Time (ms) between connection attempts
 
 			int port					= -1;
 			bool socket					= false;
@@ -205,7 +234,9 @@ namespace redis
 			broadcast onMessage			= nullptr;
 			redisAsyncContext *context	= nullptr;
 			struct ev_loop *loop		= nullptr;
+			bool connected				= false;
+			time_point<steady_clock> lastAttempt;
 			std::set<Channel> channels;
-			emergent::Timer lastConnect;
+
 	};
 }}

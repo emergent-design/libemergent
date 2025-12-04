@@ -28,6 +28,12 @@ namespace redis
 			}
 
 
+			bool Connected() const
+			{
+				return this->context;
+			}
+
+
 			// Yes, this uses C-style ellipses, but you cannot have a virtual templated parameter
 			// pack function (the multiplexer version must be able to override the InvokeCommandV
 			// see below).
@@ -45,6 +51,8 @@ namespace redis
 			// Connection
 			bool Authenticate(const string &password)	{ return Command("AUTH %s", password.c_str()).AsStatus(); }
 			bool Select(int db)							{ return Command("SELECT %d", db).AsStatus(); }
+
+			std::string Ping(const string &value = "PONG")	{ return Command("PING %s", value.c_str()).AsString(); }
 
 			// Keys
 			//long Delete(std::initializer_list<string> keys) { }
@@ -176,12 +184,16 @@ namespace redis
 			{
 				if (this->context)
 				{
-					auto result = redisvCommand(this->context, command, arguments);
+					const auto result = redisvCommand(this->context, command, arguments);
 
-					if (!result) this->Connect();
-
-					return (redisReply *)result;
+					if (result)
+					{
+						return (redisReply *)result;
+					}
 				}
+
+				// something went wrong - attempt a reconnection
+				this->Connect();
 
 				return nullptr;
 			}
@@ -189,21 +201,25 @@ namespace redis
 
 			bool Connect()
 			{
-				if (this->context)
-				{
-					if (this->context->err) Log::Error("Problem with redis connection: %s", this->context->errstr);
-					redisFree(this->context);
-					this->context = nullptr;
-				}
-
 				// Limit the time between reconnection attempts
-				if (duration_cast<milliseconds>(steady_clock::now() - this->lastAttempt).count() < this->timeout)
+				if (duration_cast<milliseconds>(steady_clock::now() - this->lastAttempt).count() < CONNECT_TIMEOUT)
 				{
 					return false;
 				}
 
-				this->context 		= this->socket ? redisConnectUnix(this->connection.c_str()) : redisConnect(this->connection.c_str(), this->port);
+				if (this->context)
+				{
+					if (this->context->err)
+					{
+						Log::Error("Problem with redis connection: %s", this->context->errstr);
+					}
+
+					redisFree(this->context);
+					this->context = nullptr;
+				}
+
 				this->lastAttempt	= steady_clock::now();
+				this->context 		= this->socket ? redisConnectUnix(this->connection.c_str()) : redisConnect(this->connection.c_str(), this->port);
 
 				if (this->context->err)
 				{
@@ -217,9 +233,10 @@ namespace redis
 				return true;
 			}
 
+			static const int CONNECT_TIMEOUT		= 1000;	// Time (ms) between connection attempts
 
 			int port								= -1;
-			int timeout								= 1000;
+			// int timeout								= 1000;
 			bool socket								= false;
 			string connection						= "127.0.0.1";
 			redisContext *context					= nullptr;
