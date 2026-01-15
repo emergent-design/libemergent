@@ -106,7 +106,7 @@ namespace redis
 			bool Connect()
 			{
 				// Limit the time between reconnection attempts
-				if (duration_cast<milliseconds>(steady_clock::now() - this->lastAttempt).count() < CONNECT_TIMEOUT)
+				if (duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - this->lastAttempt).count() < CONNECT_TIMEOUT)
 				{
 					return false;
 				}
@@ -117,7 +117,7 @@ namespace redis
 					return false;
 				}
 
-				this->lastAttempt	= steady_clock::now();
+				this->lastAttempt	= std::chrono::steady_clock::now();
 				this->context		= this->socket
 					? redisAsyncConnectUnix(this->connection.c_str())
 					: redisAsyncConnect(this->connection.c_str(), this->port);
@@ -162,13 +162,13 @@ namespace redis
 						Log::Error("Problem with redis async connection: %s", this->context->errstr);
 					}
 
-					redisAsyncFree(this->context);
+					// redisAsyncFree(this->context);
 					this->context = nullptr;
 				}
 			}
 
 
-			static void OnMessage(redisAsyncContext *c, void *reply, void *data)
+			static void OnMessage(redisAsyncContext *c, void *reply, void *)
 			{
 				if (reply)
 				{
@@ -235,7 +235,8 @@ namespace redis
 			redisAsyncContext *context	= nullptr;
 			struct ev_loop *loop		= nullptr;
 			bool connected				= false;
-			time_point<steady_clock> lastAttempt;
+
+			std::chrono::time_point<std::chrono::steady_clock> lastAttempt;
 			std::set<Channel> channels;
 
 	};
