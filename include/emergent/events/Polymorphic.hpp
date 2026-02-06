@@ -15,7 +15,7 @@ namespace emergent::events
 		public:
 
 			using EventPtr	= std::shared_ptr<const Base>;
-			using SubBase	= SubscriptionBase<Base, PolymorphicPublisher, QUEUE>;
+			using SubBase	= SubscriptionBase<Base, QUEUE>;
 
 
 			// A subscript for a specific event type. Event must be derived from the base event class/struct.
@@ -24,10 +24,15 @@ namespace emergent::events
 				public:
 					using Callback = std::function<void(std::shared_ptr<const Event>)>;
 
-					explicit Subscription(PolymorphicPublisher &publisher, Callback callback) : SubBase(publisher), callback(callback)
+					explicit Subscription(PolymorphicPublisher &publisher, Callback callback)
+						: SubBase([this, &publisher] {
+							publisher.Detach(this);
+						}),
+						callback(callback)
 					{
-						this->publisher.Attach(*this);
+						publisher.Attach(this);
 					}
+
 
 				protected:
 
@@ -68,7 +73,8 @@ namespace emergent::events
 
 				for (auto &s : this->subscribers)
 				{
-					s.get().Push(event);
+					// s.get().Push(event);
+					s->Push(event);
 				}
 			}
 
@@ -81,7 +87,7 @@ namespace emergent::events
 
 		private:
 
-			void Attach(SubBase &sub)
+			void Attach(SubBase *sub)
 			{
 				std::unique_lock lock(this->cs);
 
@@ -89,17 +95,17 @@ namespace emergent::events
 			}
 
 
-			void Detach(SubBase &sub)
+			void Detach(SubBase *sub)
 			{
 				std::unique_lock lock(this->cs);
 
 				this->subscribers.remove_if([&](auto &s) {
-						return &s.get() == &sub;
+					return s == sub;
 				});
 			}
 
 
-			std::list<std::reference_wrapper<SubBase>> subscribers;
+			std::list<SubBase *> subscribers;
 			std::shared_mutex cs;
 
 			// The subscription must be friended so that it can access the Attach/Detach

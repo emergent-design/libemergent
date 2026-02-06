@@ -66,7 +66,7 @@ namespace emergent
 
 
 			/// A millisecond precision time point
-			static const uint64_t LogTime()
+			static uint64_t LogTime()
 			{
 				return std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::high_resolution_clock::now().time_since_epoch()
@@ -74,4 +74,3 @@ namespace emergent
 			}
 	};
 }
-

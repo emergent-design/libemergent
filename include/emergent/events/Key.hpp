@@ -17,23 +17,20 @@ namespace emergent::events
 
 			using EventPtr	= std::shared_ptr<const Event>;
 			using Callback	= std::function<void(EventPtr)>;
-			using SubBase	= SubscriptionBase<Event, KeyPublisher, QUEUE>;
 
 
-			class Subscription : public SubBase
+			class Subscription : public SubscriptionBase<Event, QUEUE>
 			{
 				public:
 
-					explicit Subscription(const Key &key, KeyPublisher &publisher, Callback callback) : SubBase(publisher), callback(callback), key(key)
+					explicit Subscription(const Key &key, KeyPublisher &publisher, Callback callback)
+						: SubscriptionBase<Event, QUEUE>([this, &publisher, k = key] {
+							publisher.Detach(this, k);
+						}),
+						callback(callback) //, key(key)
 					{
-						this->publisher.Attach(*this);
+						publisher.Attach(this, key);
 					}
-
-					const Key &What() const
-					{
-						return this->key;
-					}
-
 
 				protected:
 
@@ -46,7 +43,6 @@ namespace emergent::events
 				private:
 
 					Callback callback;
-					Key key;
 			};
 
 
@@ -58,7 +54,6 @@ namespace emergent::events
 			// scope of the publisher.
 			[[nodiscard]] std::unique_ptr<Subscription> Subscribe(const Key &key, Callback callback)
 			{
-				// return Subscription { key, *this, callback };
 				return std::make_unique<Subscription>(key, *this, callback);
 			}
 
@@ -75,7 +70,7 @@ namespace emergent::events
 
 				for (auto &s : this->subscribers[key])
 				{
-					s.get().Push(event);
+					s->Push(event);
 				}
 
 				return true;
@@ -90,39 +85,34 @@ namespace emergent::events
 
 		private:
 
-			using Subscriber = std::reference_wrapper<SubBase>;
-
-
 			// Attach the subscriber to a specific key
-			void Attach(SubBase &sub)
+			void Attach(Subscription *sub, const Key &key)
 			{
 				std::unique_lock lock(this->cs);
 
-				this->subscribers[static_cast<Subscription&>(sub).What()].push_front(sub);
+				this->subscribers[key].push_front(sub);
 			}
 
 
-			void Detach(SubBase &sub)
+			void Detach(Subscription *sub, const Key &key)
 			{
 				std::unique_lock lock(this->cs);
-
-				const auto &key = static_cast<Subscription &>(sub).What();
 
 				if (this->subscribers.contains(key))
 				{
 					this->subscribers[key].remove_if([&](auto &s) {
-						return &s.get() == &sub;
+						return s == sub;
 					});
 				}
 			}
 
 
-			std::map<Key, std::list<Subscriber>> subscribers;
+			std::map<Key, std::list<Subscription *>> subscribers;
 			std::shared_mutex cs;
 
 			// The subscription must be friended so that it can access the Attach/Detach
 			// functions that should not be used externally
-			friend SubBase;
+			friend Subscription;
 	};
 
 }

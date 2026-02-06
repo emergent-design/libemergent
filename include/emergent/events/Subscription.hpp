@@ -9,15 +9,14 @@ namespace emergent::events
 	// A shared Subscription base class for the different publishers.
 	// The Event type can be anything for a KeyPublisher but must be a struct/class for the Polymorphic publisher.
 	// The QUEUE template value limits the size of the queue in case a subscriber is not invoking the Listen() function on a regular basis.
-	template <typename Event, typename Publisher, size_t QUEUE = 1024> class SubscriptionBase
+	template <typename Event, size_t QUEUE = 1024> class SubscriptionBase
 	{
 		public:
 			using EventPtr = std::shared_ptr<const Event>;
 
-
 			virtual ~SubscriptionBase()
 			{
-				this->publisher.Detach(*this);
+				this->detach();
 			}
 
 			// See if there are any events on the queue for this subscription and invoke the callback.
@@ -63,7 +62,8 @@ namespace emergent::events
 		protected:
 
 			// The derived subscription class must call publisher.Attach(...) in its constructor
-			explicit SubscriptionBase(Publisher &publisher) : publisher(publisher) {}
+			// explicit SubscriptionBase(Publisher &publisher) : publisher(publisher) {}
+			explicit SubscriptionBase(std::function<void()> &&detach) : detach(std::move(detach)) {}
 
 			// No copying allowed
 			SubscriptionBase(const SubscriptionBase &)				= delete;
@@ -75,9 +75,11 @@ namespace emergent::events
 			// Must be overridden to send the event to the listener.
 			virtual void Publish(EventPtr) = 0;
 
-			Publisher &publisher;
+
 
 		private:
+
+			const std::function<void()> detach;
 
 			// Pop an item off the queue if available
 			EventPtr Pop()
