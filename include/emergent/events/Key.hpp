@@ -1,6 +1,8 @@
 #pragma once
 
 #include <emergent/events/Subscription.hpp>
+#include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <list>
 
@@ -11,66 +13,59 @@ namespace emergent::events
 	// The type of Key can be any type which can be used as the key in a std::map<>.
 	// Subscriptions are tied to the value of key and when an event is raised the key must be specified so that all relevant subscribers can be notified.
 	// This construct can be useful for monitoring changes in a key-value store or for observing changes within a tree structure.
-	template <typename Key, typename Event, size_t QUEUE = 1024> class KeyPublisher
+	template <typename Key, typename Event> class KeyPublisher
 	{
 		public:
 
-			using EventPtr	= std::shared_ptr<const Event>;
-			using Callback	= std::function<void(EventPtr)>;
+			using QueuePtr = std::shared_ptr<Queue<Event>>;
 
 
-			class Subscription : public SubscriptionBase<Event, QUEUE>
+			// Subscribe to a specific key - when the subscription is destroyed the publisher will remove the
+			// corresponding queue from the list the next time an event is raised.
+			[[nodiscard]] std::unique_ptr<Subscription<Event>> Subscribe(const Key &key, typename Subscription<Event>::Callback callback, const size_t size = 1024)
 			{
-				public:
+				std::unique_lock lock(this->cs);
 
-					explicit Subscription(const Key &key, KeyPublisher &publisher, Callback callback)
-						: SubscriptionBase<Event, QUEUE>([this, &publisher, k = key] {
-							publisher.Detach(this, k);
-						}),
-						callback(callback) //, key(key)
-					{
-						publisher.Attach(this, key);
-					}
+				auto queue = std::make_shared<Queue<Event>>(size);
 
-				protected:
+				this->subscribers[key].push_front(queue);
 
-					void Publish(EventPtr event) override
-					{
-						this->callback(event);
-					}
-
-
-				private:
-
-					Callback callback;
-			};
-
-
-			virtual ~KeyPublisher() {}
-
-
-			// Subscribe to a specific key - the subscription is bound to the lifetime of the return value so it will automatically
-			// detach itself from the publisher when destroyed. Subscriptions should therefore not be permitted to live beyond the
-			// scope of the publisher.
-			[[nodiscard]] std::unique_ptr<Subscription> Subscribe(const Key &key, Callback callback)
-			{
-				return std::make_unique<Subscription>(key, *this, callback);
+				return std::make_unique<Subscription<Event>>(queue, callback);
 			}
 
 
 			// Raise an event. All subscribers that are registered for the specific key will be notified.
-			bool Raise(const Key &key, EventPtr event)
+			bool Raise(const Key &key, std::shared_ptr<const Event> event)
 			{
-				std::shared_lock lock(this->cs);
+				bool expired = false;	// flag to indicate if any subscribers are no longer listening
 
-				if (!this->subscribers.contains(key))
 				{
-					return false;
+					std::shared_lock lock(this->cs);
+
+					if (!this->subscribers.contains(key))
+					{
+						return false;
+					}
+
+					for (auto &s : this->subscribers[key])
+					{
+						if (!s->Push(event))
+						{
+							expired = true;
+						}
+					}
 				}
 
-				for (auto &s : this->subscribers[key])
+
+				if (expired)
 				{
-					s->Push(event);
+					// We have at least one subscriber that is no longer listening so
+					// remove the corresponding queue from the list.
+					std::unique_lock lock(this->cs);
+
+					this->subscribers[key].remove_if([](const auto &s) {
+						return !s->listening;
+					});
 				}
 
 				return true;
@@ -85,34 +80,8 @@ namespace emergent::events
 
 		private:
 
-			// Attach the subscriber to a specific key
-			void Attach(Subscription *sub, const Key &key)
-			{
-				std::unique_lock lock(this->cs);
-
-				this->subscribers[key].push_front(sub);
-			}
-
-
-			void Detach(Subscription *sub, const Key &key)
-			{
-				std::unique_lock lock(this->cs);
-
-				if (this->subscribers.contains(key))
-				{
-					this->subscribers[key].remove_if([&](auto &s) {
-						return s == sub;
-					});
-				}
-			}
-
-
-			std::map<Key, std::list<Subscription *>> subscribers;
+			std::map<Key, std::list<QueuePtr>> subscribers;
 			std::shared_mutex cs;
-
-			// The subscription must be friended so that it can access the Attach/Detach
-			// functions that should not be used externally
-			friend Subscription;
 	};
 
 }

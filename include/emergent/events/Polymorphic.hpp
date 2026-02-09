@@ -1,6 +1,7 @@
 #pragma once
 
 #include <emergent/events/Subscription.hpp>
+#include <memory>
 #include <shared_mutex>
 #include <list>
 
@@ -9,72 +10,58 @@ namespace emergent::events
 {
 	// An type-based event publisher.
 	// The type Base must be the base class/struct for all events that will be used with this publisher.
-	// All subscribers are placed in a single list and will selectively queue events based on type when they are raised.
-	template <typename Base, size_t QUEUE = 1024> class PolymorphicPublisher
+	// All subscriber queues are placed in a single list, events will be published to each, and when events
+	// are popped off the queue their type is checked to see if they are off interest to that particular subscriber.
+	template <typename Base> class PolymorphicPublisher
 	{
 		public:
 
-			using EventPtr	= std::shared_ptr<const Base>;
-			using SubBase	= SubscriptionBase<Base, QUEUE>;
 
-
-			// A subscript for a specific event type. Event must be derived from the base event class/struct.
-			template <typename Event> requires(std::derived_from<Event, Base>) class Subscription : public SubBase
-			{
-				public:
-					using Callback = std::function<void(std::shared_ptr<const Event>)>;
-
-					explicit Subscription(PolymorphicPublisher &publisher, Callback callback)
-						: SubBase([this, &publisher] {
-							publisher.Detach(this);
-						}),
-						callback(callback)
-					{
-						publisher.Attach(this);
-					}
-
-
-				protected:
-
-					// The event is not of interest to this subscription if it cannot be dynamically cast to Event.
-					bool Invalid(EventPtr event) override
-					{
-						return std::dynamic_pointer_cast<const Event>(event) == nullptr;
-					}
-
-					void Publish(EventPtr event) override
-					{
-						this->callback(std::dynamic_pointer_cast<const Event>(event));
-					}
-
-				private:
-
-					Callback callback;
-			};
-
-
-			virtual ~PolymorphicPublisher() {}
-
-
-			// Subscribe to a specific event type - the subscription is bound to the lifetime of the return value so it will automatically
-			// detach itself from the publisher when destroyed. Subscriptions should therefore not be permitted to live beyond the
-			// scope of the publisher.
+			// Subscribe to a specific event type - when the subscription is destroyed the publisher will remove the
+			// corresponding queue from the list the next time an event is raised.
 			// Subscribing to the Base event class will allow a listener to receive all events.
-			template <typename Event> requires(std::derived_from<Event, Base>) [[nodiscard]] std::unique_ptr<Subscription<Event>> Subscribe(typename Subscription<Event>::Callback callback)
+			template <typename Event> requires(std::derived_from<Event, Base>) [[nodiscard]]
+			std::unique_ptr<Subscription<Base, Event>> Subscribe(typename Subscription<Base, Event>::Callback callback, const size_t size = 1024)
 			{
-				// return Subscription<Event> { *this, callback };
-				return std::make_unique<Subscription<Event>>(*this, callback);
+				std::unique_lock lock(this->cs);
+
+				auto queue = std::make_shared<Queue<Base>>(size);
+
+				this->subscribers.push_front(queue);
+
+				return std::make_unique<Subscription<Base, Event>>(queue, callback);
 			}
 
-			// Raise an event - all subscribers that are able to handle the event type will be notified
-			void Raise(EventPtr event)
-			{
-				std::shared_lock lock(this->cs);
 
-				for (auto &s : this->subscribers)
+			// Raise an event - all subscribers that are able to handle the event type will be notified
+			// next time they listen
+			void Raise(std::shared_ptr<const Base> event)
+			{
+				// flag to indicate if any subscribers are no longer listening
+				bool expired = false;
+
 				{
-					// s.get().Push(event);
-					s->Push(event);
+					std::shared_lock lock(this->cs);
+
+					for (auto &s : this->subscribers)
+					{
+						if (!s->Push(event))
+						{
+							expired = true;
+						}
+					}
+				}
+
+
+				if (expired)
+				{
+					// We have at least one subscriber that is no longer listening so
+					// remove the corresponding queue from the list.
+					std::unique_lock lock(this->cs);
+
+					this->subscribers.remove_if([](const auto &s) {
+						return !s->listening;
+					});
 				}
 			}
 
@@ -87,29 +74,7 @@ namespace emergent::events
 
 		private:
 
-			void Attach(SubBase *sub)
-			{
-				std::unique_lock lock(this->cs);
-
-				this->subscribers.push_front(sub);
-			}
-
-
-			void Detach(SubBase *sub)
-			{
-				std::unique_lock lock(this->cs);
-
-				this->subscribers.remove_if([&](auto &s) {
-					return s == sub;
-				});
-			}
-
-
-			std::list<SubBase *> subscribers;
+			std::list<std::shared_ptr<Queue<Base>>> subscribers;
 			std::shared_mutex cs;
-
-			// The subscription must be friended so that it can access the Attach/Detach
-			// functions that should not be used externally
-			friend SubBase;
 	};
 }
