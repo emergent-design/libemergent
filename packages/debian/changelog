@@ -1,3 +1,11 @@
+libemergent0 (0.1.14) unstable; urgency=medium
+
+  * Refactor of the event sub-system to simplify it and prevent undefined 
+    behaviour if the lifetime of the subscription exceeds that of the 
+    publisher. Removes the need for raw pointers and attach/detach lambdas
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Mon, 09 Feb 2026 16:12:05 +0000
+
 libemergent0 (0.1.13) unstable; urgency=medium
 
   * Fix potential segfault in redis subscription 
