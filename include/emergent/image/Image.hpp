@@ -80,7 +80,11 @@ namespace emergent
 
 
 			/// Prevent the depth from being changed for this derived type of image.
-			bool Load(std::vector<byte> &buffer, const byte depth = 0) override
+		#ifdef __cpp_lib_span
+			virtual bool Load(std::span<byte> buffer, const byte depth = 0)
+		#else
+			virtual bool Load(std::vector<byte> &buffer, const byte depth = 0)
+		#endif
 			{
 				if (depth && depth != D)
 				{

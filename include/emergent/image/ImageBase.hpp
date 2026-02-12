@@ -566,7 +566,11 @@ namespace emergent
 
 			/// Load an image from memory buffer. If depth is 0 then the depth of this image will be left
 			/// as it is, otherwise it will attempt to convert to the required depth where necessary.
+		#ifdef __cpp_lib_span
+			virtual bool Load(std::span<byte> buffer, const byte depth = 0)
+		#else
 			virtual bool Load(std::vector<byte> &buffer, const byte depth = 0)
+		#endif
 			{
 				bool result	= false;
 				auto *mem 	= FreeImage_OpenMemory(buffer.data(), buffer.size());
