@@ -14,6 +14,10 @@
 #include <utility>
 #include <algorithm>
 
+#if __has_include(<span>)
+	#include <span>
+#endif
+
 
 namespace emergent
 {
