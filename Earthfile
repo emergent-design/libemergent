@@ -1,6 +1,6 @@
-VERSION 0.6
+VERSION 0.8
 
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN true
 WORKDIR /code
@@ -23,9 +23,8 @@ check:
 package:
 	FROM +code
 	RUN cd packages && dpkg-buildpackage -b -uc -us
-	SAVE ARTIFACT libemergent-dev_*.deb libemergent-dev.deb
-	SAVE ARTIFACT libemergent-dev_*.deb AS LOCAL build/
+	SAVE ARTIFACT --keep-ts libemergent-dev_*.deb libemergent-dev.deb
+	SAVE ARTIFACT --keep-ts libemergent-dev_*.deb AS LOCAL build/
 
 emergent-all:
 	BUILD +package
-
