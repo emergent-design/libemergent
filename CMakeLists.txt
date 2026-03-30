@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(
-	libentity
-	VERSION 1.2.1
+	libemergent
+	VERSION 0.1.4
 	DESCRIPTION "a header-only library containing some useful classes"
 	LANGUAGES CXX
 )
