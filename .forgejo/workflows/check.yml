@@ -4,7 +4,7 @@ on:
     branches: [master]
 
 jobs:
-    package:
+    build:
       name: build and run unit tests
       runs-on: amd64
 
