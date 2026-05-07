@@ -12,11 +12,23 @@ namespace emergent
 			public:
 
 				/// Accessor for the singleton instance
-				inline static Aggregator &Instance()
-				{
-					static Aggregator _instance;
-					return _instance;
-				}
+				#ifdef _WIN32
+					#ifdef AGGREGATOR_EXPORT
+						__declspec(dllexport) static Aggregator &Instance()
+						{
+							static Aggregator _instance;
+							return _instance;
+						}
+					#else
+						__declspec(dllimport) static Aggregator &Instance();
+					#endif
+				#else
+					static Aggregator &Instance()
+					{
+						static Aggregator _instance;
+						return _instance;
+					}
+				#endif
 
 
 				/// Initialise with a process specific ID (to prevent overwriting of statistics

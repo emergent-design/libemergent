@@ -19,6 +19,7 @@
 #endif
 
 
+
 namespace emergent
 {
 	// A simple header used when storing a raw Image<> as a binary blob (for example, to file or Redis).

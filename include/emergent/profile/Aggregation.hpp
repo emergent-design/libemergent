@@ -10,17 +10,17 @@ namespace emergent
 		/// Running tallies and the final results for a single profiling point.
 		struct AggregateStatistics
 		{
-			long mean 		= 0;
-			long stddev		= 0;
-			long minimum	= 0;
-			long maximum	= 0;
-			long samples	= 0;
+			int64_t mean 		= 0;
+			int64_t stddev		= 0;
+			int64_t minimum	= 0;
+			int64_t maximum	= 0;
+			int64_t samples	= 0;
 
-			long sum		= 0;
-			long squared	= 0;
+			int64_t sum		= 0;
+			int64_t squared	= 0;
 
 
-			void Add(long reading)
+			void Add(int64_t reading)
 			{
 				this->minimum = this->samples ? std::min(this->minimum, reading) : reading;
 				this->maximum = this->samples ? std::max(this->maximum, reading) : reading;
