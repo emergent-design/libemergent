@@ -50,6 +50,12 @@ namespace redis
 
 			bool Initialise(broadcast onMessage, std::set<Channel> channels = {}, bool socket = false, string connection = "127.0.0.1", int port = 6379)
 			{
+				if (this->context)
+				{
+					redisAsyncDisconnect(this->context);
+					ev_run(this->loop, EVRUN_NOWAIT);
+				}
+
 				this->port			= port;
 				this->socket		= socket;
 				this->connection	= connection;
