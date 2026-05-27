@@ -1,8 +1,8 @@
 #pragma once
 
 #include <functional>
-#include <utility>
 #include <memory>
+#include <string>
 #include <map>
 
 
@@ -63,7 +63,10 @@ namespace emergent
 
 				void Set(std::function<void *()> retrieve, std::function<void()> dispose = nullptr)
 				{
-					if (this->dispose) this->dispose();
+					if (this->dispose)
+					{
+						this->dispose();
+					}
 
 					this->retrieve	= retrieve;
 					this->dispose	= dispose;
@@ -72,7 +75,10 @@ namespace emergent
 
 				~Container()
 				{
-					if (this->dispose) this->dispose();
+					if (this->dispose)
+					{
+						this->dispose();
+					}
 				}
 			};
 
