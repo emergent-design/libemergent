@@ -12,9 +12,19 @@ namespace redis
 	{
 		public:
 
+			// Prevent redis instance from being accidentally copied
+			// to prevent memory access issues when the copy is used
+			Redis()							= default;
+			Redis(const Redis&)				= delete;
+			Redis &operator=(const Redis &)	= delete;
+
+
 			virtual ~Redis()
 			{
-				if (this->context) redisFree(this->context);
+				if (this->context)
+				{
+					redisFree(this->context);
+				}
 			}
 
 
