@@ -236,6 +236,23 @@ namespace emergent
 				return result;
 			}
 
+			// Pretty print a duration - value should be in seconds
+			static const string duration(const int64_t seconds)
+			{
+				const int years 	= (seconds / (365 * 24 * 3600)) % (365 * 24 * 3600);
+				const int days		= (seconds / (24 * 3600)) % (24 * 3600);
+				const int hours 	= (seconds / 3'600) % 24;
+				const int minutes	= (seconds / 60) % 60;
+				const int remainder	= seconds % 60;
+
+				if (years)		return emergent::String::format("%dy %3dd %2dh %2dm %2ds", years, days, hours, minutes, remainder);
+				if (days)		return emergent::String::format("%3dd %2dh %2dm %2ds", days, hours, minutes, remainder);
+				if (hours)		return emergent::String::format("%2dh %2dm %2ds", hours, minutes, remainder);
+				if (minutes)	return emergent::String::format("%2dm %2ds", minutes, remainder);
+
+				return emergent::String::format("%2ds", remainder);
+			}
+
 
 			template <typename ...Args> static const string format(const char *format, Args ...args)
 			{
