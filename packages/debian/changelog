@@ -1,3 +1,9 @@
+libemergent0 (0.1.16) unstable; urgency=medium
+
+  * Added a helper function for printing time durations
+
+ -- Dan Parnham <dan@emergent-design.co.uk>  Wed, 25 Nov 2026 16:44:48 +0000
+
 libemergent0 (0.1.15) unstable; urgency=medium
 
   * Added span<> support for loading images (where supported)
